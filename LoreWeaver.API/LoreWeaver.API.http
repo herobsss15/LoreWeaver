@@ -1,0 +1,6 @@
+@LoreWeaver.API_HostAddress = http://localhost:5121
+
+GET {{LoreWeaver.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
