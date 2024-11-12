@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorldForge.Dominio", "LoreWeaver.Dominio\WorldForge.Dominio.csproj", "{0556DB9C-1868-4B65-A068-6C756281AA9D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorldForge.Dominio", "LoreWeaver.Dominio\LoreWeaver.Dominio.csproj", "{0556DB9C-1868-4B65-A068-6C756281AA9D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoreWeaver.Repository", "LoreWeaver.Repository\LoreWeaver.Repository.csproj", "{10D91090-73B4-4A1C-9999-903CDB7F0703}"
 EndProject
