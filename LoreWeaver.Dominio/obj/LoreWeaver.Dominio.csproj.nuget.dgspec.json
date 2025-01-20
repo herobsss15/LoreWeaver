@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\guilh\\OneDrive\\Área de Trabalho\\Itera360\\Projetos\\LoreWeaver\\LoreWeaver.Services\\LoreWeaver.Services.csproj": {}
+    "C:\\Users\\guilh\\OneDrive\\Área de Trabalho\\Itera360\\Projetos\\LoreWeaver\\LoreWeaver.Dominio\\LoreWeaver.Dominio.csproj": {}
   },
   "projects": {
-    "C:\\Users\\guilh\\OneDrive\\Área de Trabalho\\Itera360\\Projetos\\LoreWeaver\\LoreWeaver.Services\\LoreWeaver.Services.csproj": {
+    "C:\\Users\\guilh\\OneDrive\\Área de Trabalho\\Itera360\\Projetos\\LoreWeaver\\LoreWeaver.Dominio\\LoreWeaver.Dominio.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\guilh\\OneDrive\\Área de Trabalho\\Itera360\\Projetos\\LoreWeaver\\LoreWeaver.Services\\LoreWeaver.Services.csproj",
-        "projectName": "LoreWeaver.Services",
-        "projectPath": "C:\\Users\\guilh\\OneDrive\\Área de Trabalho\\Itera360\\Projetos\\LoreWeaver\\LoreWeaver.Services\\LoreWeaver.Services.csproj",
+        "projectUniqueName": "C:\\Users\\guilh\\OneDrive\\Área de Trabalho\\Itera360\\Projetos\\LoreWeaver\\LoreWeaver.Dominio\\LoreWeaver.Dominio.csproj",
+        "projectName": "LoreWeaver.Dominio",
+        "projectPath": "C:\\Users\\guilh\\OneDrive\\Área de Trabalho\\Itera360\\Projetos\\LoreWeaver\\LoreWeaver.Dominio\\LoreWeaver.Dominio.csproj",
         "packagesPath": "C:\\Users\\guilh\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\guilh\\OneDrive\\Área de Trabalho\\Itera360\\Projetos\\LoreWeaver\\LoreWeaver.Services\\obj\\",
+        "outputPath": "C:\\Users\\guilh\\OneDrive\\Área de Trabalho\\Itera360\\Projetos\\LoreWeaver\\LoreWeaver.Dominio\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
