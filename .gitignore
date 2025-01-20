@@ -1,0 +1,56 @@
+# .gitignore for Visual Studio Code and .NET
+
+# Ignore the .vscode folder and its contents
+.vscode/
+.vscode-server/
+.vscode-server-data/
+.vscode-remote/
+.vscode-ssh/
+.vscode-ssh-remote/
+.vscode-test/
+
+# Ignore the history folder
+.history/
+
+# Ignore specific VS Code configuration files
+settings.json
+extensions.json
+launch.json
+tasks.json
+
+# Ignore the VS Code snippets folder
+snippets/
+
+# Ignore the VS Code logs folder
+logs/
+
+# Ignore the VS Code workspace state
+workspaceStorage/
+
+# Ignore the VS Code user settings
+user/
+
+# Ignore the VS Code extensions
+.vscode/extensions/
+.vscode/cache/
+.vscode/logs/
+.vscode/crash-reports/
+.vscode/backups/
+.vscode/globalStorage/
+.vscode/workspaceStorage/
+
+# Ignore .NET build results
+bin/
+obj/
+
+# Ignore .NET user-specific files
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Ignore .NET project files
+project.lock.json
+project.fragment.lock.json
+artifacts/
