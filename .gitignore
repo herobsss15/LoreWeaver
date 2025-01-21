@@ -41,7 +41,8 @@ user/
 
 # Ignore .NET build results
 bin/
-obj/
+obj/**
+obj/Debug/**
 
 # Ignore .NET user-specific files
 *.user
