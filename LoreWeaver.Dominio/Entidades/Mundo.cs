@@ -11,6 +11,9 @@ namespace WorldForge.Dominio.Entidades
         #region Propriedades
         public int CriadorId { get; set; }
         public int MundoId { get; set; }
+        public ICollection<Personagem> Personagens { get; set; }
+        public ICollection<Versao> Versoes { get; set; }
+
 
         public string NomeDoMundo
         {

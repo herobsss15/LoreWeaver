@@ -13,7 +13,8 @@ namespace WorldForge.Dominio.Entidades
         public int PersonagemId { get; set; }
         public int MundoId { get; set; }
         public Mundo Mundo { get; set; }
-        public ICollection<Evento> Eventos { get; set; }
+        public int EventoId { get; set; }
+        public Evento Evento { get; set; }
 
         public int CriadorId { get; set; }
 
@@ -74,7 +75,7 @@ namespace WorldForge.Dominio.Entidades
             DescricaoPersonagem = descricaoPersonagem;
             PapelPersonagem = papelPersonagem;
             CriadorId = criadorId;
-            Eventos = new List<Evento>();
+            Evento = null;
             Ativo = true; // Definido como ativo por padrão no construtor.
         }
         #endregion

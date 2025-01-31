@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("LoreWeaver.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d82b92f19c0c1e62c9533ccc28fbbfa466263f2f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+42000009935ea98b66eb624b770d5820b3401243")]
 [assembly: System.Reflection.AssemblyProductAttribute("LoreWeaver.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("LoreWeaver.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

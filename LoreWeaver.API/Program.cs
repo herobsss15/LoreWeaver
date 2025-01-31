@@ -1,44 +1,73 @@
-var builder = WebApplication.CreateBuilder(args);
+using LoreWeaver.Application.Implementations;
+using LoreWeaver.Application.Services;
+using LoreWeaver.Repository.Data;
+using LoreWeaver.Repository.Implementations;
+using LoreWeaver.Repository.Interfaces;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi.Models;
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+public class Startup
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    public Startup(IConfiguration configuration)
+    {
+        Configuration = configuration;
+    }
 
-app.UseHttpsRedirection();
+    public IConfiguration Configuration { get; }
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.AddDbContext<LoreWeaverContext>(options =>
+            options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+        services.AddScoped<IMundoRepository, MundoRepository>();
+        services.AddScoped<MundoService>();
 
-app.Run();
+        services.AddScoped<IEventoRepository, EventoRepository>();
+        services.AddScoped<EventoService>();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+        services.AddScoped<ILugarRepository, LugarRepository>();
+        services.AddScoped<LugarService>();
+
+        services.AddScoped<IPersonagemRepository, PersonagemRepository>();
+        services.AddScoped<PersonagemService>();
+
+        services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+        services.AddScoped<UsuarioService>();
+
+        services.AddScoped<IVersaoRepository, VersaoRepository>();
+        services.AddScoped<VersaoService>();
+
+        services.AddControllers();
+        services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new OpenApiInfo { Title = "LoreWeaver.API", Version = "v1" });
+        });
+    }
+
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    {
+        if (env.IsDevelopment())
+        {
+            app.UseDeveloperExceptionPage();
+            app.UseSwagger();
+            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "LoreWeaver.API v1"));
+        }
+
+        app.UseHttpsRedirection();
+
+        app.UseRouting();
+
+        app.UseAuthorization();
+
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapControllers();
+        });
+    }
 }
