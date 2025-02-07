@@ -62,7 +62,7 @@ namespace WorldForge.Dominio.Entidades
 
         public ICollection<Mundo> Mundos { get; set; }
         public ICollection<Evento> Eventos { get; set; }
-        public ICollection<Lugar> Lugares { get; set; }
+        // public ICollection<Lugar> Lugares { get; set; }
         public ICollection<Personagem> Personagens { get; set; }
         #endregion
 
@@ -75,7 +75,7 @@ namespace WorldForge.Dominio.Entidades
             Ativo = true; // Usuário ativo por padrão no construtor.
             Mundos = new List<Mundo>();
             Eventos = new List<Evento>();
-            Lugares = new List<Lugar>();
+            // Lugares = new List<Lugar>();
             Personagens = new List<Personagem>();
         }
         #endregion

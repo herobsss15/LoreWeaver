@@ -9,8 +9,8 @@ namespace WorldForge.Dominio.Entidades
         #endregion
 
         #region Propriedades
-        public int CriadorId { get; set; }
         public int MundoId { get; set; }
+        public ICollection<Personagem> Personagens { get; set; }
 
         public string NomeDoMundo
         {
@@ -48,19 +48,12 @@ namespace WorldForge.Dominio.Entidades
         }
         #endregion
 
-        public ICollection<Evento> Eventos { get; set; }
-        public ICollection<Lugar> Lugares { get; set; }
-
-
         #region Construtor
-        public Mundo(string nomeDoMundo, string descricaoMundo, int criadorId)
+        public Mundo(string nomeDoMundo, string descricaoMundo)
         {
             NomeDoMundo = nomeDoMundo;
             DescricaoMundo = descricaoMundo;
-            CriadorId = criadorId;
             Ativo = true; // Ativo por padrão no construtor.
-            Eventos = new List<Evento>();
-            Lugares = new List<Lugar>();
         }
         #endregion
 

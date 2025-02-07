@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("LoreWeaver.Dominio")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ce27d7dce363195b4cc26bc9804dcb3300f3d524")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+306d4dc5979368a4d20cd013d9402e2e6af621e4")]
 [assembly: System.Reflection.AssemblyProductAttribute("LoreWeaver.Dominio")]
 [assembly: System.Reflection.AssemblyTitleAttribute("LoreWeaver.Dominio")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
