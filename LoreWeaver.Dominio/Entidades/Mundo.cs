@@ -52,7 +52,7 @@ namespace WorldForge.Dominio.Entidades
         #endregion
 
         public ICollection<Evento> Eventos { get; set; }
-        public ICollection<Lugar> Lugares { get; set; }
+        // public ICollection<Lugar> Lugares { get; set; }
 
 
         #region Construtor
@@ -63,7 +63,7 @@ namespace WorldForge.Dominio.Entidades
             CriadorId = criadorId;
             Ativo = true; // Ativo por padrão no construtor.
             Eventos = new List<Evento>();
-            Lugares = new List<Lugar>();
+            // Lugares = new List<Lugar>();
         }
         #endregion
 

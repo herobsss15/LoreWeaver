@@ -1,73 +1,72 @@
-using LoreWeaver.Application.Implementations;
-using LoreWeaver.Application.Services;
-using LoreWeaver.Repository.Data;
 using LoreWeaver.Repository.Implementations;
 using LoreWeaver.Repository.Interfaces;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
+using LoreWeaver.Application.Services;
+using LoreWeaver.Repository.Data;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using LoreWeaver.Application.Implementations;
 
-public class Startup
+var builder = WebApplication.CreateBuilder(args);
+
+// Adicionar serviços de aplicação
+builder.Services.AddScoped<MundoService>();
+builder.Services.AddScoped<EventoService>();
+// builder.Services.AddScoped<LugarService>();
+builder.Services.AddScoped<PersonagemService>();
+builder.Services.AddScoped<UsuarioService>();
+builder.Services.AddScoped<VersaoService>();
+
+// Adicionar repositórios
+builder.Services.AddScoped<IMundoRepository, MundoRepository>();
+builder.Services.AddScoped<IEventoRepository, EventoRepository>();
+// builder.Services.AddScoped<ILugarRepository, LugarRepository>();
+builder.Services.AddScoped<IPersonagemRepository, PersonagemRepository>();
+builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+builder.Services.AddScoped<IVersaoRepository, VersaoRepository>();
+
+// Adicionar o serviço de banco de dados
+builder.Services.AddDbContext<LoreWeaverContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Adicionar CORS
+builder.Services.AddCors(options =>
 {
-    public Startup(IConfiguration configuration)
+    options.AddDefaultPolicy(builder =>
     {
-        Configuration = configuration;
-    }
+        builder.WithOrigins("http://localhost:3000")
+               .SetIsOriginAllowedToAllowWildcardSubdomains()
+               .AllowAnyHeader()
+               .AllowAnyMethod();
+    });
+});
 
-    public IConfiguration Configuration { get; }
+// Adicionar controladores
+builder.Services.AddControllers();
 
-    public void ConfigureServices(IServiceCollection services)
-    {
-        services.AddDbContext<LoreWeaverContext>(options =>
-            options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+// Adicionar autorização
+builder.Services.AddAuthorization();
 
-        services.AddScoped<IMundoRepository, MundoRepository>();
-        services.AddScoped<MundoService>();
+// Adicionar Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "LoreWeaver.API", Version = "v1" });
+});
 
-        services.AddScoped<IEventoRepository, EventoRepository>();
-        services.AddScoped<EventoService>();
+var app = builder.Build();
 
-        services.AddScoped<ILugarRepository, LugarRepository>();
-        services.AddScoped<LugarService>();
-
-        services.AddScoped<IPersonagemRepository, PersonagemRepository>();
-        services.AddScoped<PersonagemService>();
-
-        services.AddScoped<IUsuarioRepository, UsuarioRepository>();
-        services.AddScoped<UsuarioService>();
-
-        services.AddScoped<IVersaoRepository, VersaoRepository>();
-        services.AddScoped<VersaoService>();
-
-        services.AddControllers();
-        services.AddSwaggerGen(c =>
-        {
-            c.SwaggerDoc("v1", new OpenApiInfo { Title = "LoreWeaver.API", Version = "v1" });
-        });
-    }
-
-    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-    {
-        if (env.IsDevelopment())
-        {
-            app.UseDeveloperExceptionPage();
-            app.UseSwagger();
-            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "LoreWeaver.API v1"));
-        }
-
-        app.UseHttpsRedirection();
-
-        app.UseRouting();
-
-        app.UseAuthorization();
-
-        app.UseEndpoints(endpoints =>
-        {
-            endpoints.MapControllers();
-        });
-    }
+// Configure o pipeline de solicitação HTTP
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+    app.UseCors();
 }
+
+app.UseHttpsRedirection();
+
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run("http://localhost:5000");

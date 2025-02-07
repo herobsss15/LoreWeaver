@@ -2,47 +2,40 @@
 
 # Ignore the .vscode folder and its contents
 .vscode/
-.vscode-server/
-.vscode-server-data/
-.vscode-remote/
-.vscode-ssh/
-.vscode-ssh-remote/
-.vscode-test/
+.vscode-server*/
+.vscode-remote*/
 
 # Ignore the history folder
 .history/
 
 # Ignore specific VS Code configuration files
-settings.json
-extensions.json
-launch.json
-tasks.json
+.vscode/settings.json
+.vscode/extensions.json
+.vscode/launch.json
+.vscode/tasks.json
 
 # Ignore the VS Code snippets folder
-snippets/
+.vscode/snippets/
 
 # Ignore the VS Code logs folder
-logs/
+.vscode/logs/
 
 # Ignore the VS Code workspace state
-workspaceStorage/
+.vscode/workspaceStorage/
 
 # Ignore the VS Code user settings
-user/
+.vscode/user/
 
 # Ignore the VS Code extensions
 .vscode/extensions/
 .vscode/cache/
-.vscode/logs/
 .vscode/crash-reports/
 .vscode/backups/
 .vscode/globalStorage/
-.vscode/workspaceStorage/
 
 # Ignore .NET build results
 bin/
-obj/**
-obj/Debug/**
+obj/
 
 # Ignore .NET user-specific files
 *.user
@@ -55,3 +48,17 @@ obj/Debug/**
 project.lock.json
 project.fragment.lock.json
 artifacts/
+
+# Ignore .NET Visual Studio files
+*.VisualState.xml
+*.dotSettings.user
+*.dotSettings
+
+# Ignore assembly files in obj folder
+obj/**/*.dll
+obj/**/*.exe
+
+api/bin/
+api/obj/
+api/obj/**/*.dll
+api/obj/**/*.exe

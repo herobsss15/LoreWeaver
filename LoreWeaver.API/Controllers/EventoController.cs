@@ -1,7 +1,10 @@
-using LoreWeaver.Application.Services;
-using WorldForge.Dominio.Entidades;
+using LoreWeaver.Application.Interfaces;
+using LoreWeaver.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using System.Linq;
+using LoreWeaver.Application.Services;
+using WorldForge.Dominio.Entidades;
 
 namespace LoreWeaver.API.Controllers
 {
@@ -17,42 +20,72 @@ namespace LoreWeaver.API.Controllers
         }
 
         [HttpGet]
-        public ActionResult<IEnumerable<Evento>> GetEventos()
+        public ActionResult<IEnumerable<EventoModel>> GetEventos()
         {
-            return Ok(_eventoService.GetAllEventos());
+            var eventos = _eventoService.GetAllEventos().Select(e => new EventoModel
+            {
+                EventoId = e.EventoId,
+                NomeEvento = e.NomeEvento,
+                DescricaoEvento = e.DescricaoEvento,
+                DataEvento = e.DataEvento,
+                Ativo = e.Ativo,
+                MundoId = e.MundoId,
+                CriadorId = e.CriadorId
+            });
+            return Ok(eventos);
         }
 
         [HttpGet("{id}")]
-        public ActionResult<Evento> GetEvento(int id)
+        public ActionResult<EventoModel> GetEvento(int id)
         {
             var evento = _eventoService.GetEventoById(id);
             if (evento == null)
             {
                 return NotFound();
             }
-            return Ok(evento);
+            var eventoModel = new EventoModel
+            {
+                EventoId = evento.EventoId,
+                NomeEvento = evento.NomeEvento,
+                DescricaoEvento = evento.DescricaoEvento,
+                DataEvento = evento.DataEvento,
+                Ativo = evento.Ativo,
+                MundoId = evento.MundoId,
+                CriadorId = evento.CriadorId
+            };
+            return Ok(eventoModel);
         }
 
         [HttpPost]
-        public ActionResult<Evento> CreateEvento(Evento evento)
+        public ActionResult Add(EventoModel eventoModel)
         {
+            var evento = new Evento(eventoModel.NomeEvento, eventoModel.DescricaoEvento, eventoModel.DataEvento, eventoModel.MundoId)
+            {
+                CriadorId = eventoModel.CriadorId,
+                Ativo = eventoModel.Ativo
+            };
             _eventoService.CreateEvento(evento);
-            return CreatedAtAction(nameof(GetEvento), new { id = evento.EventoId }, evento);
+            return CreatedAtAction(nameof(GetEvento), new { id = evento.EventoId }, eventoModel);
         }
 
         [HttpPut("{id}")]
-        public IActionResult UpdateEvento(int id, Evento evento)
+        public ActionResult Update(int id, EventoModel eventoModel)
         {
-            if (id != evento.EventoId)
+            if (id != eventoModel.EventoId)
             {
                 return BadRequest();
             }
+            var evento = new Evento(eventoModel.NomeEvento, eventoModel.DescricaoEvento, eventoModel.DataEvento, eventoModel.MundoId)
+            {
+                EventoId = eventoModel.EventoId,
+                Ativo = eventoModel.Ativo
+            };
             _eventoService.UpdateEvento(evento);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public IActionResult DeleteEvento(int id)
+        public ActionResult Delete(int id)
         {
             _eventoService.DeleteEvento(id);
             return NoContent();

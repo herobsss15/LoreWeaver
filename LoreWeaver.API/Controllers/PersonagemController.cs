@@ -1,7 +1,9 @@
-using LoreWeaver.Application.Services;
+using LoreWeaver.API.Models;
+using LoreWeaver.Repository.Interfaces;
 using WorldForge.Dominio.Entidades;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace LoreWeaver.API.Controllers
 {
@@ -9,52 +11,113 @@ namespace LoreWeaver.API.Controllers
     [ApiController]
     public class PersonagensController : ControllerBase
     {
-        private readonly PersonagemService _personagemService;
+        private readonly IPersonagemRepository _personagemRepository;
 
-        public PersonagensController(PersonagemService personagemService)
+        public PersonagensController(IPersonagemRepository personagemRepository)
         {
-            _personagemService = personagemService;
+            _personagemRepository = personagemRepository;
         }
 
         [HttpGet]
-        public ActionResult<IEnumerable<Personagem>> GetPersonagens()
+        public ActionResult<IEnumerable<PersonagemModel>> GetPersonagens()
         {
-            return Ok(_personagemService.GetAllPersonagens());
+            var personagens = _personagemRepository.GetAll().Select(p => new PersonagemModel
+            {
+                PersonagemId = p.PersonagemId,
+                MundoId = p.MundoId,
+                EventoId = p.EventoId,
+                CriadorId = p.CriadorId,
+                NomePersonagem = p.NomePersonagem,
+                DescricaoPersonagem = p.DescricaoPersonagem,
+                PapelPersonagem = p.PapelPersonagem,
+                Ativo = p.Ativo
+            });
+
+            return Ok(personagens);
         }
 
         [HttpGet("{id}")]
-        public ActionResult<Personagem> GetPersonagem(int id)
+        public ActionResult<PersonagemModel> GetPersonagem(int id)
         {
-            var personagem = _personagemService.GetPersonagemById(id);
+            var personagem = _personagemRepository.GetById(id);
             if (personagem == null)
             {
                 return NotFound();
             }
-            return Ok(personagem);
+
+            var personagemModel = new PersonagemModel
+            {
+                PersonagemId = personagem.PersonagemId,
+                MundoId = personagem.MundoId,
+                EventoId = personagem.EventoId,
+                CriadorId = personagem.CriadorId,
+                NomePersonagem = personagem.NomePersonagem,
+                DescricaoPersonagem = personagem.DescricaoPersonagem,
+                PapelPersonagem = personagem.PapelPersonagem,
+                Ativo = personagem.Ativo
+            };
+
+            return Ok(personagemModel);
         }
 
         [HttpPost]
-        public ActionResult<Personagem> CreatePersonagem(Personagem personagem)
+        public ActionResult<PersonagemModel> CreatePersonagem(PersonagemModel personagemModel)
         {
-            _personagemService.CreatePersonagem(personagem);
-            return CreatedAtAction(nameof(GetPersonagem), new { id = personagem.PersonagemId }, personagem);
+            var personagem = new Personagem(
+                personagemModel.NomePersonagem,
+                personagemModel.DescricaoPersonagem,
+                personagemModel.PapelPersonagem,
+                personagemModel.CriadorId
+            )
+            {
+                MundoId = personagemModel.MundoId,
+                EventoId = personagemModel.EventoId,
+                Ativo = personagemModel.Ativo
+            };
+
+            _personagemRepository.Add(personagem);
+
+            personagemModel.PersonagemId = personagem.PersonagemId;
+
+            return CreatedAtAction(nameof(GetPersonagem), new { id = personagemModel.PersonagemId }, personagemModel);
         }
 
         [HttpPut("{id}")]
-        public IActionResult UpdatePersonagem(int id, Personagem personagem)
+        public IActionResult UpdatePersonagem(int id, PersonagemModel personagemModel)
         {
-            if (id != personagem.PersonagemId)
+            if (id != personagemModel.PersonagemId)
             {
                 return BadRequest();
             }
-            _personagemService.UpdatePersonagem(personagem);
+
+            var personagem = _personagemRepository.GetById(id);
+            if (personagem == null)
+            {
+                return NotFound();
+            }
+
+            personagem.NomePersonagem = personagemModel.NomePersonagem;
+            personagem.DescricaoPersonagem = personagemModel.DescricaoPersonagem;
+            personagem.PapelPersonagem = personagemModel.PapelPersonagem;
+            personagem.MundoId = personagemModel.MundoId;
+            personagem.EventoId = personagemModel.EventoId;
+            personagem.Ativo = personagemModel.Ativo;
+
+            _personagemRepository.Update(personagem);
+
             return NoContent();
         }
 
         [HttpDelete("{id}")]
         public IActionResult DeletePersonagem(int id)
         {
-            _personagemService.DeletePersonagem(id);
+            var personagem = _personagemRepository.GetById(id);
+            if (personagem == null)
+            {
+                return NotFound();
+            }
+
+            _personagemRepository.Delete(id);
             return NoContent();
         }
     }
