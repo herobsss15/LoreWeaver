@@ -5,7 +5,5 @@ namespace LoreWeaver.API.Models
         public int MundoId { get; set; }
         public string NomeDoMundo { get; set; }
         public string DescricaoMundo { get; set; }
-        public bool Ativo { get; set; }
-        public int CriadorId { get; set; }
     }
 }

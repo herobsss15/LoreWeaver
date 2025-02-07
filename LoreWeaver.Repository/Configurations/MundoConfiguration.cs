@@ -19,9 +19,6 @@ namespace LoreWeaver.Repository.Configurations
 
             builder.Property(m => m.Ativo)
                 .IsRequired();
-
-            builder.Property(m => m.CriadorId)
-                .IsRequired();
         }
     }
 }

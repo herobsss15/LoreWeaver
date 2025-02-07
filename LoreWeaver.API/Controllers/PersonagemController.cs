@@ -1,19 +1,19 @@
 using LoreWeaver.API.Models;
 using LoreWeaver.Repository.Interfaces;
-using WorldForge.Dominio.Entidades;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Linq;
+using WorldForge.Dominio.Entidades;
 
 namespace LoreWeaver.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class PersonagensController : ControllerBase
+    public class PersonagemController : ControllerBase
     {
         private readonly IPersonagemRepository _personagemRepository;
 
-        public PersonagensController(IPersonagemRepository personagemRepository)
+        public PersonagemController(IPersonagemRepository personagemRepository)
         {
             _personagemRepository = personagemRepository;
         }
@@ -25,12 +25,9 @@ namespace LoreWeaver.API.Controllers
             {
                 PersonagemId = p.PersonagemId,
                 MundoId = p.MundoId,
-                EventoId = p.EventoId,
-                CriadorId = p.CriadorId,
                 NomePersonagem = p.NomePersonagem,
-                DescricaoPersonagem = p.DescricaoPersonagem,
-                PapelPersonagem = p.PapelPersonagem,
-                Ativo = p.Ativo
+                Descricao = p.DescricaoPersonagem, // Map Descricao
+                Papel = p.PapelPersonagem // Map Papel
             });
 
             return Ok(personagens);
@@ -49,12 +46,9 @@ namespace LoreWeaver.API.Controllers
             {
                 PersonagemId = personagem.PersonagemId,
                 MundoId = personagem.MundoId,
-                EventoId = personagem.EventoId,
-                CriadorId = personagem.CriadorId,
                 NomePersonagem = personagem.NomePersonagem,
-                DescricaoPersonagem = personagem.DescricaoPersonagem,
-                PapelPersonagem = personagem.PapelPersonagem,
-                Ativo = personagem.Ativo
+                Descricao = personagem.DescricaoPersonagem, // Map Descricao
+                Papel = personagem.PapelPersonagem // Map Papel
             };
 
             return Ok(personagemModel);
@@ -65,15 +59,10 @@ namespace LoreWeaver.API.Controllers
         {
             var personagem = new Personagem(
                 personagemModel.NomePersonagem,
-                personagemModel.DescricaoPersonagem,
-                personagemModel.PapelPersonagem,
-                personagemModel.CriadorId
-            )
-            {
-                MundoId = personagemModel.MundoId,
-                EventoId = personagemModel.EventoId,
-                Ativo = personagemModel.Ativo
-            };
+                personagemModel.MundoId,
+                personagemModel.Descricao,
+                personagemModel.Papel
+            );
 
             _personagemRepository.Add(personagem);
 
@@ -96,12 +85,10 @@ namespace LoreWeaver.API.Controllers
                 return NotFound();
             }
 
-            personagem.NomePersonagem = personagemModel.NomePersonagem;
-            personagem.DescricaoPersonagem = personagemModel.DescricaoPersonagem;
-            personagem.PapelPersonagem = personagemModel.PapelPersonagem;
             personagem.MundoId = personagemModel.MundoId;
-            personagem.EventoId = personagemModel.EventoId;
-            personagem.Ativo = personagemModel.Ativo;
+            personagem.NomePersonagem = personagemModel.NomePersonagem;
+            personagem.DescricaoPersonagem = personagemModel.Descricao; // Update Descricao
+            personagem.PapelPersonagem = personagemModel.Papel; // Update Papel
 
             _personagemRepository.Update(personagem);
 

@@ -13,10 +13,10 @@ namespace WorldForge.Dominio.Entidades
         public int PersonagemId { get; set; }
         public int MundoId { get; set; }
         public Mundo Mundo { get; set; }
-        public int EventoId { get; set; }
-        public Evento Evento { get; set; }
+        // public int EventoId { get; set; }
+        // public Evento Evento { get; set; }
 
-        public int CriadorId { get; set; }
+        // public int CriadorId { get; set; }
 
         public string NomePersonagem
         {
@@ -68,15 +68,29 @@ namespace WorldForge.Dominio.Entidades
         #endregion
 
         #region Construtor
-        public Personagem(string nomePersonagem, string descricaoPersonagem, string papelPersonagem, int criadorId)
+        public Personagem(string nomePersonagem, int mundoId)
+        {
+            NomePersonagem = nomePersonagem;
+            MundoId = mundoId;
+        }
+        public Personagem(string nomePersonagem, string descricaoPersonagem, string papelPersonagem)
         {
             // As propriedades são configuradas através dos setters, que já realizam as validações necessárias.
             NomePersonagem = nomePersonagem;
             DescricaoPersonagem = descricaoPersonagem;
             PapelPersonagem = papelPersonagem;
-            CriadorId = criadorId;
-            Evento = null;
+            // CriadorId = criadorId;
+            // Evento = null;
             Ativo = true; // Definido como ativo por padrão no construtor.
+        }
+
+           public Personagem(string nomePersonagem, int mundoId, string descricao, string papel)
+        {
+            NomePersonagem = nomePersonagem;
+            MundoId = mundoId;
+            DescricaoPersonagem = descricao;
+            PapelPersonagem = papel;
+            Ativo = true;
         }
         #endregion
 

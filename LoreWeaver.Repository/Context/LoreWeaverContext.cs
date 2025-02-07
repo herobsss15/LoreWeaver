@@ -9,11 +9,12 @@ namespace LoreWeaver.Repository.Data
         public LoreWeaverContext(DbContextOptions<LoreWeaverContext> options) : base(options) { }
 
         public DbSet<Mundo> Mundos { get; set; }
-        public DbSet<Evento> Eventos { get; set; }
-        // public DbSet<Lugar> Lugares { get; set; }
         public DbSet<Personagem> Personagens { get; set; }
-        public DbSet<Usuario> Usuarios { get; set; }
-        public DbSet<Versao> Versoes { get; set; }
+
+        // Remova temporariamente as referências aos DbSets que não são necessários agora
+        // public DbSet<Evento> Eventos { get; set; }
+        // public DbSet<Versao> Versoes { get; set; }
+        // public DbSet<Usuario> Usuarios { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -27,11 +28,12 @@ namespace LoreWeaver.Repository.Data
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.ApplyConfiguration(new MundoConfiguration());
-            modelBuilder.ApplyConfiguration(new EventoConfiguration());
-            // modelBuilder.ApplyConfiguration(new LugarConfiguration());
             modelBuilder.ApplyConfiguration(new PersonagemConfiguration());
-            modelBuilder.ApplyConfiguration(new UsuarioConfiguration());
-            modelBuilder.ApplyConfiguration(new VersaoConfiguration());
+
+            // Remova temporariamente as referências às configurações que não são necessárias agora
+            // modelBuilder.ApplyConfiguration(new EventoConfiguration());
+            // modelBuilder.ApplyConfiguration(new VersaoConfiguration());
+            // modelBuilder.ApplyConfiguration(new UsuarioConfiguration());
         }
     }
 }

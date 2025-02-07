@@ -1,9 +1,9 @@
-using LoreWeaver.Application.Interfaces;
 using LoreWeaver.API.Models;
+using LoreWeaver.Repository.Interfaces;
+using WorldForge.Dominio.Entidades;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Linq;
-using WorldForge.Dominio.Entidades;
 
 namespace LoreWeaver.API.Controllers
 {
@@ -11,77 +11,89 @@ namespace LoreWeaver.API.Controllers
     [ApiController]
     public class MundosController : ControllerBase
     {
-        private readonly IMundoService _mundoService;
+        private readonly IMundoRepository _mundoRepository;
 
-        public MundosController(IMundoService mundoService)
+        public MundosController(IMundoRepository mundoRepository)
         {
-            _mundoService = mundoService;
+            _mundoRepository = mundoRepository;
         }
 
         [HttpGet]
         public ActionResult<IEnumerable<MundoModel>> GetMundos()
         {
-            var mundos = _mundoService.GetAllMundos().Select(m => new MundoModel
+            var mundos = _mundoRepository.GetAll().Select(m => new MundoModel
             {
                 MundoId = m.MundoId,
                 NomeDoMundo = m.NomeDoMundo,
-                DescricaoMundo = m.DescricaoMundo,
-                Ativo = m.Ativo,
-                CriadorId = m.CriadorId
+                DescricaoMundo = m.DescricaoMundo
             });
+
             return Ok(mundos);
         }
 
         [HttpGet("{id}")]
         public ActionResult<MundoModel> GetMundo(int id)
         {
-            var mundo = _mundoService.GetMundoById(id);
+            var mundo = _mundoRepository.GetById(id);
             if (mundo == null)
             {
                 return NotFound();
             }
+
             var mundoModel = new MundoModel
             {
                 MundoId = mundo.MundoId,
                 NomeDoMundo = mundo.NomeDoMundo,
-                DescricaoMundo = mundo.DescricaoMundo,
-                Ativo = mundo.Ativo,
-                CriadorId = mundo.CriadorId
+                DescricaoMundo = mundo.DescricaoMundo
             };
+
             return Ok(mundoModel);
         }
 
         [HttpPost]
-        public ActionResult Add(MundoModel mundoModel)
+        public ActionResult<MundoModel> CreateMundo(MundoModel mundoModel)
         {
-            var mundo = new Mundo(mundoModel.NomeDoMundo, mundoModel.DescricaoMundo, mundoModel.CriadorId)
-            {
-                Ativo = mundoModel.Ativo
-            };
-            _mundoService.CreateMundo(mundo);
-            return CreatedAtAction(nameof(GetMundo), new { id = mundo.MundoId }, mundoModel);
+            var mundo = new Mundo(mundoModel.NomeDoMundo, mundoModel.DescricaoMundo);
+
+            _mundoRepository.Add(mundo);
+
+            mundoModel.MundoId = mundo.MundoId;
+
+            return CreatedAtAction(nameof(GetMundo), new { id = mundoModel.MundoId }, mundoModel);
         }
 
         [HttpPut("{id}")]
-        public ActionResult Update(int id, MundoModel mundoModel)
+        public IActionResult UpdateMundo(int id, MundoModel mundoModel)
         {
             if (id != mundoModel.MundoId)
             {
                 return BadRequest();
             }
-            var mundo = new Mundo(mundoModel.NomeDoMundo, mundoModel.DescricaoMundo, mundoModel.CriadorId)
+
+            var mundo = _mundoRepository.GetById(id);
+            if (mundo == null)
             {
-                MundoId = mundoModel.MundoId,
-                Ativo = mundoModel.Ativo
-            };
-            _mundoService.UpdateMundo(mundo);
+                return NotFound();
+            }
+
+            mundo.NomeDoMundo = mundoModel.NomeDoMundo;
+            mundo.DescricaoMundo = mundoModel.DescricaoMundo;
+
+            _mundoRepository.Update(mundo);
+
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public ActionResult Delete(int id)
+        public IActionResult DeleteMundo(int id)
         {
-            _mundoService.DeleteMundo(id);
+            var mundo = _mundoRepository.GetById(id);
+            if (mundo == null)
+            {
+                return NotFound();
+            }
+
+            _mundoRepository.Delete(id);
             return NoContent();
         }
     }

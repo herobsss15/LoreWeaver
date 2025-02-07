@@ -24,11 +24,6 @@ namespace LoreWeaver.Repository.Configurations
                             .WithMany(m => m.Personagens)
                             .HasForeignKey(p => p.MundoId)
                             .OnDelete(DeleteBehavior.NoAction); // Especificar ON DELETE NO ACTION
-
-                     builder.HasOne(p => p.Evento)
-                            .WithMany(e => e.Personagens)
-                            .HasForeignKey(p => p.EventoId)
-                            .OnDelete(DeleteBehavior.Cascade);
               }
        }
 }

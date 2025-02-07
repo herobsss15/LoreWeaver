@@ -10,19 +10,19 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Adicionar serviços de aplicação
 builder.Services.AddScoped<MundoService>();
-builder.Services.AddScoped<EventoService>();
+// builder.Services.AddScoped<EventoService>();
 // builder.Services.AddScoped<LugarService>();
 builder.Services.AddScoped<PersonagemService>();
-builder.Services.AddScoped<UsuarioService>();
-builder.Services.AddScoped<VersaoService>();
+// builder.Services.AddScoped<UsuarioService>();
+// builder.Services.AddScoped<VersaoService>();
 
 // Adicionar repositórios
 builder.Services.AddScoped<IMundoRepository, MundoRepository>();
-builder.Services.AddScoped<IEventoRepository, EventoRepository>();
+// builder.Services.AddScoped<IEventoRepository, EventoRepository>();
 // builder.Services.AddScoped<ILugarRepository, LugarRepository>();
 builder.Services.AddScoped<IPersonagemRepository, PersonagemRepository>();
-builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
-builder.Services.AddScoped<IVersaoRepository, VersaoRepository>();
+// builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+// builder.Services.AddScoped<IVersaoRepository, VersaoRepository>();
 
 // Adicionar o serviço de banco de dados
 builder.Services.AddDbContext<LoreWeaverContext>(options =>
