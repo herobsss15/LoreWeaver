@@ -1,0 +1,24 @@
+{
+  "build": {
+    "builder": "NIXPACKS",
+    "nixpacksPlan": {
+      "phases": {
+        "setup": {
+          "nixpkgsArchive": "https://github.com/NixOS/nixpkgs/archive/refs/tags/23.11.tar.gz"
+        },
+        "install": {
+          "cmds": ["npm install"]
+        },
+        "build": {
+          "cmds": ["npm run build"]
+        }
+      }
+    }
+  },
+  "deploy": {
+    "numReplicas": 1,
+    "startCommand": "npm run preview",
+    "healthcheckPath": "/",
+    "healthcheckTimeout": 100
+  }
+}
