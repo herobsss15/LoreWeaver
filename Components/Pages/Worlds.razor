@@ -1,0 +1,75 @@
+@page "/worlds"
+@rendermode InteractiveServer
+@using LoreWeaver.Data
+@using LoreWeaver.Data.Entities
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<LoreWeaverDbContext> DbFactory
+
+<PageTitle>Mundos</PageTitle>
+
+<h1>Mundos</h1>
+
+<EditForm Model="@_newWorld" OnValidSubmit="Create">
+    <div class="form-row">
+        <div>
+            <label for="world-name">Nome</label>
+            <InputText id="world-name" @bind-Value="_newWorld.Name" placeholder="Ex.: Costa Cinzenta" />
+        </div>
+        <div>
+            <label for="world-desc">Descrição</label>
+            <InputText id="world-desc" @bind-Value="_newWorld.Description" placeholder="Opcional" />
+        </div>
+        <div class="form-row-action">
+            <button type="submit">Criar mundo</button>
+        </div>
+    </div>
+</EditForm>
+
+@if (_worlds is not null)
+{
+    @foreach (var world in _worlds)
+    {
+        <article class="result-card">
+            <header>
+                <strong>@world.Name</strong>
+                <a href="@($"/characters?worldId={world.Id}")">Ver personagens</a>
+            </header>
+            @if (!string.IsNullOrWhiteSpace(world.Description))
+            {
+                <p class="notice">@world.Description</p>
+            }
+        </article>
+    }
+}
+
+@code {
+    private List<World>? _worlds;
+    private readonly WorldFormModel _newWorld = new();
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _worlds = await db.Worlds.Where(w => w.Active).OrderBy(w => w.Name).ToListAsync();
+    }
+
+    private async Task Create()
+    {
+        if (string.IsNullOrWhiteSpace(_newWorld.Name)) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        db.Worlds.Add(new World { Name = _newWorld.Name.Trim(), Description = _newWorld.Description });
+        await db.SaveChangesAsync();
+
+        _newWorld.Name = "";
+        _newWorld.Description = null;
+        await Load();
+    }
+
+    private class WorldFormModel
+    {
+        public string Name { get; set; } = "";
+        public string? Description { get; set; }
+    }
+}

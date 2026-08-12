@@ -14,7 +14,9 @@ public class Program
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents();
 
-        builder.Services.AddDbContext<LoreWeaverDbContext>(options =>
+        // AddDbContextFactory, not AddDbContext: Blazor Server components can
+        // outlive a request, so each operation gets its own short-lived context.
+        builder.Services.AddDbContextFactory<LoreWeaverDbContext>(options =>
             options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
         builder.Services.AddHttpClient<SrdClient>(client =>

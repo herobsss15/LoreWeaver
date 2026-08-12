@@ -1,0 +1,414 @@
+@page "/characters/{Id:int}"
+@rendermode InteractiveServer
+@using LoreWeaver.Data
+@using LoreWeaver.Data.Entities
+@using LoreWeaver.Features.Characters
+@using LoreWeaver.Features.Characters.Catalog
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<LoreWeaverDbContext> DbFactory
+@inject NavigationManager Nav
+
+<PageTitle>@(_character?.Name ?? "Ficha")</PageTitle>
+
+@if (_character is null)
+{
+    <p class="notice">Carregando...</p>
+}
+else
+{
+    <h1>@_character.Name <span class="notice">Nível @_character.TotalLevel</span></h1>
+
+    <article class="result-card">
+        <h3>Dados gerais</h3>
+        <div class="form-row">
+            <div>
+                <label for="name">Nome</label>
+                <input id="name" @bind="_character.Name" />
+            </div>
+            <div>
+                <label for="player">Jogador</label>
+                <input id="player" @bind="_character.PlayerName" />
+            </div>
+        </div>
+        <label for="notes">Notas</label>
+        <textarea id="notes" @bind="_character.Notes" rows="2"></textarea>
+    </article>
+
+    <article class="result-card">
+        <h3>Raça</h3>
+        <div class="form-row">
+            <div>
+                <label for="race">Raça (SRD)</label>
+                <select id="race" value="@(_character.RaceIndex ?? "")" @onchange="OnRaceChanged">
+                    <option value="">— Texto livre / homebrew —</option>
+                    @foreach (var race in RaceCatalog.Races)
+                    {
+                        <option value="@race.Index">@race.Name</option>
+                    }
+                </select>
+            </div>
+            @if (_character.RaceIndex is null)
+            {
+                <div>
+                    <label for="race-free">Raça (texto livre)</label>
+                    <input id="race-free" @bind="_character.RaceFreeText" placeholder="Ex.: Genasi (homebrew)" />
+                </div>
+            }
+            else
+            {
+                var subraces = RaceCatalog.SubracesFor(_character.RaceIndex).ToList();
+                if (subraces.Count > 0)
+                {
+                    <div>
+                        <label for="subrace">Sub-raça</label>
+                        <select id="subrace" value="@(_character.SubraceIndex ?? "")" @onchange="OnSubraceChanged">
+                            <option value="">—</option>
+                            @foreach (var sub in subraces)
+                            {
+                                <option value="@sub.Index">@sub.Name</option>
+                            }
+                        </select>
+                    </div>
+                }
+            }
+        </div>
+
+        @if (_character.RaceIndex == "half-elf")
+        {
+            var race = RaceCatalog.FindRace("half-elf")!;
+            <div class="form-row">
+                <div>
+                    <label for="he-a">Bônus racial extra (+1) — escolha 1</label>
+                    <select id="he-a" @bind="_halfElfChoiceA">
+                        @foreach (var ability in race.BonusChoice!.Options)
+                        {
+                            <option value="@ability">@ability</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label for="he-b">Bônus racial extra (+1) — escolha 2</label>
+                    <select id="he-b" @bind="_halfElfChoiceB">
+                        @foreach (var ability in race.BonusChoice!.Options)
+                        {
+                            <option value="@ability">@ability</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        }
+
+        @if (_character.RaceIndex is not null)
+        {
+            <p class="notice">
+                "Aplicar bônus" soma o bônus racial diretamente aos atributos abaixo, uma única vez.
+                Clicar de novo soma outra vez — use apenas ao escolher a raça pela primeira vez.
+            </p>
+            <button type="button" @onclick="ApplyRaceBonus">Aplicar bônus de raça</button>
+        }
+    </article>
+
+    <article class="result-card">
+        <h3>Atributos</h3>
+        <table>
+            <thead><tr><th>Atributo</th><th>Valor</th><th>Modificador</th><th>Override do modificador</th></tr></thead>
+            <tbody>
+                @foreach (var ability in Enum.GetValues<AbilityType>())
+                {
+                    var score = _character.Ability(ability);
+                    <tr>
+                        <td>@ability</td>
+                        <td><input type="number" style="width:5rem" @bind="score.Score" /></td>
+                        <td>@FormatModifier(score.Modifier)</td>
+                        <td><input type="number" style="width:5rem" @bind="score.ModifierOverride" /></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </article>
+
+    <article class="result-card">
+        <h3>Classes (multiclasse)</h3>
+        <table>
+            <thead><tr><th>Classe</th><th>Nível</th><th>Dado de vida</th><th>Classe inicial</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var cc in _character.Classes)
+                {
+                    <tr>
+                        <td>
+                            <select value="@(cc.ClassIndex ?? "")" @onchange="e => OnClassIndexChanged(cc, e.Value?.ToString())">
+                                <option value="">— Texto livre / homebrew —</option>
+                                @foreach (var classInfo in ClassCatalog.Classes)
+                                {
+                                    <option value="@classInfo.Index">@classInfo.Name</option>
+                                }
+                            </select>
+                            @if (cc.ClassIndex is null)
+                            {
+                                <input style="margin-top:0.5rem" @bind="cc.ClassFreeText" placeholder="Nome da classe" />
+                            }
+                        </td>
+                        <td><input type="number" style="width:4rem" @bind="cc.Level" min="1" max="20" /></td>
+                        <td>
+                            @if (cc.ClassIndex is null)
+                            {
+                                <input type="number" style="width:4rem" @bind="cc.HitDieOverride" placeholder="ex: 8" />
+                            }
+                            else
+                            {
+                                @cc.HitDie
+                            }
+                        </td>
+                        <td><input type="radio" name="starting-class" checked="@cc.IsStartingClass" @onchange="() => SetStartingClass(cc)" /></td>
+                        <td><button type="button" @onclick="() => RemoveClass(cc)">Remover</button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <button type="button" @onclick="AddClass">Adicionar classe</button>
+    </article>
+
+    <article class="result-card">
+        <h3>Combate</h3>
+        <div class="form-row">
+            <div>
+                <label for="hp-current">PV atual</label>
+                <input id="hp-current" type="number" style="width:5rem" @bind="_character.HitPointsCurrent" />
+            </div>
+            <div>
+                <label for="hp-max-override">PV máximo (override)</label>
+                <input id="hp-max-override" type="number" style="width:5rem" @bind="_character.HitPointsMaxOverride" />
+                <span class="notice">Calculado: @_character.HitPointsMax()</span>
+            </div>
+            <div>
+                <label for="ac-override">CA (override)</label>
+                <input id="ac-override" type="number" style="width:5rem" @bind="_character.ArmorClassOverride" />
+                <span class="notice">Calculado: @_character.ArmorClass()</span>
+            </div>
+            <div>
+                <label for="pb-override">Bônus de proficiência (override)</label>
+                <input id="pb-override" type="number" style="width:5rem" @bind="_character.ProficiencyBonusOverride" />
+                <span class="notice">Calculado: @FormatModifier(_character.ProficiencyBonus())</span>
+            </div>
+        </div>
+    </article>
+
+    <article class="result-card">
+        <h3>Salvaguardas</h3>
+        <table>
+            <thead><tr><th>Atributo</th><th>Proficiente</th><th>Bônus</th><th>Override</th></tr></thead>
+            <tbody>
+                @foreach (var save in _character.SavingThrows.OrderBy(s => s.Ability))
+                {
+                    <tr>
+                        <td>@save.Ability</td>
+                        <td><input type="checkbox" @bind="save.IsProficient" /></td>
+                        <td>@FormatModifier(_character.SaveBonus(save))</td>
+                        <td><input type="number" style="width:4rem" @bind="save.BonusOverride" /></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </article>
+
+    <article class="result-card">
+        <h3>Perícias</h3>
+        <table>
+            <thead><tr><th>Perícia</th><th>Atributo</th><th>Proficiente</th><th>Bônus</th><th>Override</th></tr></thead>
+            <tbody>
+                @foreach (var skill in _character.Skills.OrderBy(s => s.Skill))
+                {
+                    <tr>
+                        <td>@SkillCatalog.DisplayName[skill.Skill]</td>
+                        <td class="notice">@SkillCatalog.AbilityFor[skill.Skill]</td>
+                        <td><input type="checkbox" @bind="skill.IsProficient" /></td>
+                        <td>@FormatModifier(_character.SkillBonus(skill))</td>
+                        <td><input type="number" style="width:4rem" @bind="skill.BonusOverride" /></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </article>
+
+    <div class="actions">
+        <button type="button" @onclick="Save">Salvar</button>
+        <a href="/characters"><button type="button">Voltar</button></a>
+    </div>
+    @if (_savedMessage is not null)
+    {
+        <p class="notice">@_savedMessage</p>
+    }
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Character? _character;
+    private AbilityType? _halfElfChoiceA;
+    private AbilityType? _halfElfChoiceB;
+    private string? _savedMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _character = await db.Characters
+            .Include(c => c.Classes)
+            .Include(c => c.Skills)
+            .Include(c => c.SavingThrows)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == Id);
+    }
+
+    private void OnRaceChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        _character!.RaceIndex = string.IsNullOrEmpty(value) ? null : value;
+        _character.SubraceIndex = null;
+        _halfElfChoiceA = null;
+        _halfElfChoiceB = null;
+    }
+
+    private void OnSubraceChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        _character!.SubraceIndex = string.IsNullOrEmpty(value) ? null : value;
+    }
+
+    private void ApplyRaceBonus()
+    {
+        var race = RaceCatalog.FindRace(_character!.RaceIndex);
+        if (race is null) return;
+
+        foreach (var bonus in race.AbilityBonuses)
+        {
+            _character.Ability(bonus.Ability).Score += bonus.Bonus;
+        }
+
+        if (race.BonusChoice is not null)
+        {
+            if (_halfElfChoiceA is { } a) _character.Ability(a).Score += 1;
+            if (_halfElfChoiceB is { } b && b != _halfElfChoiceA) _character.Ability(b).Score += 1;
+        }
+
+        var subrace = RaceCatalog.FindSubrace(_character.SubraceIndex);
+        if (subrace is not null)
+        {
+            foreach (var bonus in subrace.AbilityBonuses)
+            {
+                _character.Ability(bonus.Ability).Score += bonus.Bonus;
+            }
+        }
+    }
+
+    private void OnClassIndexChanged(CharacterClass cc, string? value)
+    {
+        cc.ClassIndex = string.IsNullOrEmpty(value) ? null : value;
+        if (cc.ClassIndex is not null) cc.HitDieOverride = null;
+    }
+
+    private void AddClass()
+    {
+        var cc = new CharacterClass { Level = 1, IsStartingClass = _character!.Classes.Count == 0 };
+        _character.Classes.Add(cc);
+    }
+
+    private void RemoveClass(CharacterClass cc)
+    {
+        _character!.Classes.Remove(cc);
+        if (cc.IsStartingClass && _character.Classes.FirstOrDefault() is { } next)
+        {
+            next.IsStartingClass = true;
+        }
+    }
+
+    private void SetStartingClass(CharacterClass target)
+    {
+        foreach (var cc in _character!.Classes)
+        {
+            cc.IsStartingClass = cc == target;
+        }
+    }
+
+    private static string FormatModifier(int value) => value >= 0 ? $"+{value}" : value.ToString();
+
+    private async Task Save()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var dbCharacter = await db.Characters
+            .Include(c => c.Classes)
+            .Include(c => c.Skills)
+            .Include(c => c.SavingThrows)
+            .FirstAsync(c => c.Id == Id);
+
+        dbCharacter.Name = _character!.Name;
+        dbCharacter.PlayerName = _character.PlayerName;
+        dbCharacter.Notes = _character.Notes;
+        dbCharacter.RaceIndex = _character.RaceIndex;
+        dbCharacter.RaceFreeText = _character.RaceFreeText;
+        dbCharacter.SubraceIndex = _character.SubraceIndex;
+        dbCharacter.HitPointsCurrent = _character.HitPointsCurrent;
+        dbCharacter.HitPointsMaxOverride = _character.HitPointsMaxOverride;
+        dbCharacter.ArmorClassOverride = _character.ArmorClassOverride;
+        dbCharacter.ProficiencyBonusOverride = _character.ProficiencyBonusOverride;
+
+        CopyAbility(_character.Strength, dbCharacter.Strength);
+        CopyAbility(_character.Dexterity, dbCharacter.Dexterity);
+        CopyAbility(_character.Constitution, dbCharacter.Constitution);
+        CopyAbility(_character.Intelligence, dbCharacter.Intelligence);
+        CopyAbility(_character.Wisdom, dbCharacter.Wisdom);
+        CopyAbility(_character.Charisma, dbCharacter.Charisma);
+
+        var localClassIds = _character.Classes.Where(c => c.Id != 0).Select(c => c.Id).ToHashSet();
+        foreach (var stale in dbCharacter.Classes.Where(c => !localClassIds.Contains(c.Id)).ToList())
+        {
+            dbCharacter.Classes.Remove(stale);
+        }
+        foreach (var local in _character.Classes)
+        {
+            var target = local.Id != 0 ? dbCharacter.Classes.FirstOrDefault(c => c.Id == local.Id) : null;
+            if (target is null)
+            {
+                dbCharacter.Classes.Add(new CharacterClass
+                {
+                    ClassIndex = local.ClassIndex,
+                    ClassFreeText = local.ClassFreeText,
+                    Level = local.Level,
+                    IsStartingClass = local.IsStartingClass,
+                    HitDieOverride = local.HitDieOverride
+                });
+            }
+            else
+            {
+                target.ClassIndex = local.ClassIndex;
+                target.ClassFreeText = local.ClassFreeText;
+                target.Level = local.Level;
+                target.IsStartingClass = local.IsStartingClass;
+                target.HitDieOverride = local.HitDieOverride;
+            }
+        }
+
+        foreach (var local in _character.Skills)
+        {
+            var target = dbCharacter.Skills.First(s => s.Skill == local.Skill);
+            target.IsProficient = local.IsProficient;
+            target.BonusOverride = local.BonusOverride;
+        }
+
+        foreach (var local in _character.SavingThrows)
+        {
+            var target = dbCharacter.SavingThrows.First(s => s.Ability == local.Ability);
+            target.IsProficient = local.IsProficient;
+            target.BonusOverride = local.BonusOverride;
+        }
+
+        await db.SaveChangesAsync();
+        _savedMessage = "Salvo.";
+        await OnParametersSetAsync();
+    }
+
+    private static void CopyAbility(AbilityScoreValue from, AbilityScoreValue to)
+    {
+        to.Score = from.Score;
+        to.ModifierOverride = from.ModifierOverride;
+    }
+}

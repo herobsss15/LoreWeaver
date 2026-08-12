@@ -23,8 +23,9 @@ dotnet run
 
 ## Estrutura
 
-- `Components/Pages/` — páginas Razor (Regras, NPCs, Encontros; fichas de personagem/mundos em desenvolvimento)
-- `Features/` — lógica de domínio por área (`Npcs`, `Encounters`, `Rules`, `Common`)
+- `Components/Pages/` — páginas Razor (Mundos, Personagens, Regras, NPCs, Encontros)
+- `Features/` — lógica de domínio por área (`Characters`, `Npcs`, `Encounters`, `Rules`, `Common`)
+- `Features/Characters/Catalog/` — dados de classes/raças/perícias da SRD 2014, embutidos (ported de `5e-bits/5e-database`, sem dependência de rede)
 - `Data/` — `DbContext`, entidades e migrations do EF Core
 
 ## Funcionalidades
@@ -32,11 +33,11 @@ dotnet run
 - **Busca de Regras:** proxy/cache server-side para a SRD (termo ou slug), com TTL de 6h e stale-while-revalidate de 5min.
 - **Gerador de NPCs:** geração determinística local com seed e re-roll, rotulado como Homebrew.
 - **Compositor de Encontros:** orçamento de XP aproximado (tabelas do DMG) e criaturas sugeridas com links canônicos da SRD.
-- **Mundos e Personagens:** entidades e persistência básicas (`Data/Entities`); a ficha mecânica completa (classe, raça, nível, atributos, PV, CA, inventário, magias) ainda não foi desenhada.
+- **Mundos e Personagens:** CRUD básico de mundos e ficha mecânica de personagem — atributos, multiclasse, PV/CA/bônus de proficiência com override manual, perícias e salvaguardas. Classe/raça aceitam SRD ou texto livre (homebrew). Inventário e magias ainda não implementados.
 
 ## Roadmap
 
-- Ficha de personagem mecânica completa (CRUD)
+- Inventário / equipamento e magias (spellbook, incl. multiclass spellcasting)
 - Autenticação simplificada para o grupo (convite/senha + Cloudflare Access)
 - Videoconferência em grupo via LiveKit self-hosted (SFU) + coturn para TURN/STUN
 - Streaming de música de ambientação mixado no mesmo room do LiveKit

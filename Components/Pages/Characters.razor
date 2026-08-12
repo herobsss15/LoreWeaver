@@ -1,0 +1,112 @@
+@page "/characters"
+@rendermode InteractiveServer
+@using LoreWeaver.Data
+@using LoreWeaver.Data.Entities
+@using LoreWeaver.Features.Characters
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<LoreWeaverDbContext> DbFactory
+@inject NavigationManager Nav
+
+<PageTitle>Personagens</PageTitle>
+
+<h1>Personagens</h1>
+
+@if (_worlds is not null && _worlds.Count == 0)
+{
+    <p class="notice">Nenhum mundo cadastrado ainda. <a href="/worlds">Crie um mundo</a> antes de adicionar personagens.</p>
+}
+else if (_worlds is not null)
+{
+    <EditForm Model="@_newCharacter" OnValidSubmit="Create">
+        <div class="form-row">
+            <div>
+                <label for="char-name">Nome</label>
+                <InputText id="char-name" @bind-Value="_newCharacter.Name" placeholder="Ex.: Aelar" />
+            </div>
+            <div>
+                <label for="char-player">Jogador</label>
+                <InputText id="char-player" @bind-Value="_newCharacter.PlayerName" placeholder="Opcional" />
+            </div>
+            <div>
+                <label for="char-world">Mundo</label>
+                <InputSelect id="char-world" @bind-Value="_newCharacter.WorldId">
+                    @foreach (var world in _worlds)
+                    {
+                        <option value="@world.Id">@world.Name</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="form-row-action">
+                <button type="submit">Criar personagem</button>
+            </div>
+        </div>
+    </EditForm>
+}
+
+@if (_characters is not null)
+{
+    @foreach (var character in _characters)
+    {
+        <article class="result-card">
+            <header>
+                <strong>@character.Name</strong>
+                <a href="@($"/characters/{character.Id}")">Abrir ficha</a>
+            </header>
+            <p class="notice">
+                @character.World?.Name
+                @if (character.PlayerName is not null) { <text> · @character.PlayerName</text> }
+                @if (character.Classes.Count > 0)
+                {
+                    <text> · Nível @character.TotalLevel (@string.Join(" / ", character.Classes.Select(c => $"{c.DisplayName} {c.Level}")))</text>
+                }
+            </p>
+        </article>
+    }
+}
+
+@code {
+    [SupplyParameterFromQuery] public int? WorldId { get; set; }
+
+    private List<World>? _worlds;
+    private List<Character>? _characters;
+    private readonly NewCharacterModel _newCharacter = new();
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _worlds = await db.Worlds.Where(w => w.Active).OrderBy(w => w.Name).ToListAsync();
+
+        if (_newCharacter.WorldId == 0 && _worlds.Count > 0)
+        {
+            _newCharacter.WorldId = WorldId ?? _worlds[0].Id;
+        }
+
+        var query = db.Characters.Include(c => c.World).Include(c => c.Classes).Where(c => c.Active);
+        if (WorldId is { } worldId)
+        {
+            query = query.Where(c => c.WorldId == worldId);
+        }
+        _characters = await query.OrderBy(c => c.Name).ToListAsync();
+    }
+
+    private async Task Create()
+    {
+        if (string.IsNullOrWhiteSpace(_newCharacter.Name) || _newCharacter.WorldId == 0) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var character = CharacterFactory.Create(_newCharacter.Name.Trim(), _newCharacter.WorldId, _newCharacter.PlayerName);
+        db.Characters.Add(character);
+        await db.SaveChangesAsync();
+
+        Nav.NavigateTo($"/characters/{character.Id}");
+    }
+
+    private class NewCharacterModel
+    {
+        public string Name { get; set; } = "";
+        public string? PlayerName { get; set; }
+        public int WorldId { get; set; }
+    }
+}
