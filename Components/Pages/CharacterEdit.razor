@@ -194,6 +194,98 @@ else
     </article>
 
     <article class="result-card">
+        <h3>Moeda</h3>
+        <div class="form-row">
+            <div>
+                <label for="cp">PC (cobre)</label>
+                <input id="cp" type="number" style="width:5rem" @bind="_character.CopperPieces" />
+            </div>
+            <div>
+                <label for="sp">PP (prata)</label>
+                <input id="sp" type="number" style="width:5rem" @bind="_character.SilverPieces" />
+            </div>
+            <div>
+                <label for="ep">PE (electrum)</label>
+                <input id="ep" type="number" style="width:5rem" @bind="_character.ElectrumPieces" />
+            </div>
+            <div>
+                <label for="gp">PO (ouro)</label>
+                <input id="gp" type="number" style="width:5rem" @bind="_character.GoldPieces" />
+            </div>
+            <div>
+                <label for="pp">PL (platina)</label>
+                <input id="pp" type="number" style="width:5rem" @bind="_character.PlatinumPieces" />
+            </div>
+        </div>
+    </article>
+
+    <article class="result-card">
+        <h3>Inventário</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th><th>Qtd.</th><th>Equipado</th><th>Slot</th><th>Armadura (homebrew)</th><th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in _character.Inventory)
+                {
+                    <tr>
+                        <td>
+                            <select value="@(item.ItemIndex ?? "")" @onchange="e => OnItemIndexChanged(item, e.Value?.ToString())">
+                                <option value="">— Texto livre / homebrew —</option>
+                                @foreach (var category in Enum.GetValues<EquipmentCategory>())
+                                {
+                                    <optgroup label="@category">
+                                        @foreach (var eqItem in EquipmentCatalog.Items.Where(i => i.Category == category).OrderBy(i => i.Name))
+                                        {
+                                            <option value="@eqItem.Index">@eqItem.Name</option>
+                                        }
+                                    </optgroup>
+                                }
+                            </select>
+                            @if (item.ItemIndex is null)
+                            {
+                                <input style="margin-top:0.5rem" @bind="item.ItemFreeText" placeholder="Nome do item" />
+                            }
+                        </td>
+                        <td><input type="number" style="width:4rem" @bind="item.Quantity" min="1" /></td>
+                        <td><input type="checkbox" checked="@item.IsEquipped" @onchange="e => ToggleEquipped(item, e)" /></td>
+                        <td>
+                            <select value="@(item.Slot?.ToString() ?? "")" @onchange="e => ChangeSlot(item, e.Value?.ToString())">
+                                <option value="">— nenhum —</option>
+                                @foreach (var slot in Enum.GetValues<EquipmentSlot>())
+                                {
+                                    <option value="@slot">@slot</option>
+                                }
+                            </select>
+                        </td>
+                        <td>
+                            @if (item.ItemIndex is null && item.Slot is EquipmentSlot.BodyArmor or EquipmentSlot.Shield)
+                            {
+                                <select @bind="item.ArmorCategoryOverride">
+                                    @foreach (var cat in Enum.GetValues<ArmorCategory>())
+                                    {
+                                        <option value="@cat">@cat</option>
+                                    }
+                                </select>
+                                <input type="number" style="width:4rem" @bind="item.ArmorBaseOverride" placeholder="base" />
+                                <label style="display:inline">
+                                    <input type="checkbox" checked="@(item.ArmorDexBonusOverride ?? true)"
+                                           @onchange="e => item.ArmorDexBonusOverride = (bool)(e.Value ?? true)" /> DEX?
+                                </label>
+                                <input type="number" style="width:4rem" @bind="item.ArmorMaxBonusOverride" placeholder="cap DEX" />
+                            }
+                        </td>
+                        <td><button type="button" @onclick="() => RemoveItem(item)">Remover</button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <button type="button" @onclick="AddItem">Adicionar item</button>
+    </article>
+
+    <article class="result-card">
         <h3>Salvaguardas</h3>
         <table>
             <thead><tr><th>Atributo</th><th>Proficiente</th><th>Bônus</th><th>Override</th></tr></thead>
@@ -255,6 +347,7 @@ else
             .Include(c => c.Classes)
             .Include(c => c.Skills)
             .Include(c => c.SavingThrows)
+            .Include(c => c.Inventory)
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == Id);
     }
@@ -329,6 +422,46 @@ else
         }
     }
 
+    private void OnItemIndexChanged(InventoryItem item, string? value)
+    {
+        item.ItemIndex = string.IsNullOrEmpty(value) ? null : value;
+        if (item.ItemIndex is not null)
+        {
+            item.ArmorCategoryOverride = null;
+            item.ArmorBaseOverride = null;
+            item.ArmorDexBonusOverride = null;
+            item.ArmorMaxBonusOverride = null;
+        }
+    }
+
+    private void ToggleEquipped(InventoryItem item, ChangeEventArgs e)
+    {
+        item.IsEquipped = (bool)(e.Value ?? false);
+        EnforceSlotExclusivity(item);
+    }
+
+    private void ChangeSlot(InventoryItem item, string? value)
+    {
+        item.Slot = string.IsNullOrEmpty(value) ? null : Enum.Parse<EquipmentSlot>(value);
+        EnforceSlotExclusivity(item);
+    }
+
+    // UX convenience for every slot (equipping a new item unequips whatever
+    // else was in that slot) - only BodyArmor/Shield have a DB constraint
+    // backing this up, since those are the only slots that feed ArmorClass.
+    private void EnforceSlotExclusivity(InventoryItem item)
+    {
+        if (!item.IsEquipped || item.Slot is not { } slot) return;
+        foreach (var other in _character!.Inventory.Where(i => i != item && i.Slot == slot))
+        {
+            other.IsEquipped = false;
+        }
+    }
+
+    private void AddItem() => _character!.Inventory.Add(new InventoryItem { Quantity = 1 });
+
+    private void RemoveItem(InventoryItem item) => _character!.Inventory.Remove(item);
+
     private static string FormatModifier(int value) => value >= 0 ? $"+{value}" : value.ToString();
 
     private async Task Save()
@@ -338,6 +471,7 @@ else
             .Include(c => c.Classes)
             .Include(c => c.Skills)
             .Include(c => c.SavingThrows)
+            .Include(c => c.Inventory)
             .FirstAsync(c => c.Id == Id);
 
         dbCharacter.Name = _character!.Name;
@@ -350,6 +484,11 @@ else
         dbCharacter.HitPointsMaxOverride = _character.HitPointsMaxOverride;
         dbCharacter.ArmorClassOverride = _character.ArmorClassOverride;
         dbCharacter.ProficiencyBonusOverride = _character.ProficiencyBonusOverride;
+        dbCharacter.CopperPieces = _character.CopperPieces;
+        dbCharacter.SilverPieces = _character.SilverPieces;
+        dbCharacter.ElectrumPieces = _character.ElectrumPieces;
+        dbCharacter.GoldPieces = _character.GoldPieces;
+        dbCharacter.PlatinumPieces = _character.PlatinumPieces;
 
         CopyAbility(_character.Strength, dbCharacter.Strength);
         CopyAbility(_character.Dexterity, dbCharacter.Dexterity);
@@ -357,6 +496,15 @@ else
         CopyAbility(_character.Intelligence, dbCharacter.Intelligence);
         CopyAbility(_character.Wisdom, dbCharacter.Wisdom);
         CopyAbility(_character.Charisma, dbCharacter.Charisma);
+
+        // IsStartingClass and IsEquipped (BodyArmor/Shield) sit behind a
+        // partial unique index, which Postgres checks per-statement, not at
+        // transaction end - so within one SaveChanges call, flipping the new
+        // "true" before the old "false" is committed throws even though the
+        // final state is valid. Deferring every new-"true" to a second pass
+        // (after the "false"s are already saved) avoids that ordering trap.
+        var toStartClassAfter = new List<CharacterClass>();
+        var toEquipAfter = new List<InventoryItem>();
 
         var localClassIds = _character.Classes.Where(c => c.Id != 0).Select(c => c.Id).ToHashSet();
         foreach (var stale in dbCharacter.Classes.Where(c => !localClassIds.Contains(c.Id)).ToList())
@@ -368,22 +516,23 @@ else
             var target = local.Id != 0 ? dbCharacter.Classes.FirstOrDefault(c => c.Id == local.Id) : null;
             if (target is null)
             {
-                dbCharacter.Classes.Add(new CharacterClass
-                {
-                    ClassIndex = local.ClassIndex,
-                    ClassFreeText = local.ClassFreeText,
-                    Level = local.Level,
-                    IsStartingClass = local.IsStartingClass,
-                    HitDieOverride = local.HitDieOverride
-                });
+                target = new CharacterClass();
+                dbCharacter.Classes.Add(target);
+            }
+
+            target.ClassIndex = local.ClassIndex;
+            target.ClassFreeText = local.ClassFreeText;
+            target.Level = local.Level;
+            target.HitDieOverride = local.HitDieOverride;
+
+            if (local.IsStartingClass)
+            {
+                target.IsStartingClass = false; // deferred to phase 2
+                toStartClassAfter.Add(target);
             }
             else
             {
-                target.ClassIndex = local.ClassIndex;
-                target.ClassFreeText = local.ClassFreeText;
-                target.Level = local.Level;
-                target.IsStartingClass = local.IsStartingClass;
-                target.HitDieOverride = local.HitDieOverride;
+                target.IsStartingClass = false;
             }
         }
 
@@ -401,7 +550,43 @@ else
             target.BonusOverride = local.BonusOverride;
         }
 
+        var localItemIds = _character.Inventory.Where(i => i.Id != 0).Select(i => i.Id).ToHashSet();
+        foreach (var stale in dbCharacter.Inventory.Where(i => !localItemIds.Contains(i.Id)).ToList())
+        {
+            dbCharacter.Inventory.Remove(stale);
+        }
+        foreach (var local in _character.Inventory)
+        {
+            var target = local.Id != 0 ? dbCharacter.Inventory.FirstOrDefault(i => i.Id == local.Id) : null;
+            if (target is null)
+            {
+                target = new InventoryItem();
+                dbCharacter.Inventory.Add(target);
+            }
+
+            target.ItemIndex = local.ItemIndex;
+            target.ItemFreeText = local.ItemFreeText;
+            target.Quantity = local.Quantity;
+            target.Slot = local.Slot;
+            target.ArmorCategoryOverride = local.ArmorCategoryOverride;
+            target.ArmorBaseOverride = local.ArmorBaseOverride;
+            target.ArmorDexBonusOverride = local.ArmorDexBonusOverride;
+            target.ArmorMaxBonusOverride = local.ArmorMaxBonusOverride;
+
+            var deferEquip = local.IsEquipped && local.Slot is EquipmentSlot.BodyArmor or EquipmentSlot.Shield;
+            target.IsEquipped = deferEquip ? false : local.IsEquipped;
+            if (deferEquip) toEquipAfter.Add(target);
+        }
+
         await db.SaveChangesAsync();
+
+        if (toStartClassAfter.Count > 0 || toEquipAfter.Count > 0)
+        {
+            foreach (var cc in toStartClassAfter) cc.IsStartingClass = true;
+            foreach (var item in toEquipAfter) item.IsEquipped = true;
+            await db.SaveChangesAsync();
+        }
+
         _savedMessage = "Salvo.";
         await OnParametersSetAsync();
     }

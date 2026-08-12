@@ -21,8 +21,27 @@ public static class CharacterCalculator
     public static int ProficiencyBonus(this Character character) =>
         character.ProficiencyBonusOverride ?? (2 + (Math.Max(character.TotalLevel, 1) - 1) / 4);
 
-    public static int ArmorClass(this Character character) =>
-        character.ArmorClassOverride ?? (10 + character.Dexterity.Modifier);
+    public static int ArmorClass(this Character character)
+    {
+        if (character.ArmorClassOverride is { } overrideValue) return overrideValue;
+
+        var dexModifier = character.Dexterity.Modifier;
+        var bodyArmor = EquippedArmor(character, EquipmentSlot.BodyArmor);
+
+        var baseAc = bodyArmor is null
+            ? 10 + dexModifier
+            : bodyArmor.Base + (bodyArmor.DexBonus
+                ? (bodyArmor.MaxBonus is { } maxBonus ? Math.Min(dexModifier, maxBonus) : dexModifier)
+                : 0);
+
+        // A shield is worn alongside armor (or nothing), never in place of
+        // it, so its Base is always an addition, never a replacement.
+        var shield = EquippedArmor(character, EquipmentSlot.Shield);
+        return baseAc + (shield?.Base ?? 0);
+    }
+
+    private static ArmorInfo? EquippedArmor(Character character, EquipmentSlot slot) =>
+        character.Inventory.FirstOrDefault(i => i.IsEquipped && i.Slot == slot)?.EffectiveArmor;
 
     public static int HitPointsMax(this Character character)
     {

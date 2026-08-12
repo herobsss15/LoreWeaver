@@ -32,9 +32,16 @@ public class Character
     public int? ArmorClassOverride { get; set; }
     public int? ProficiencyBonusOverride { get; set; }
 
+    public int CopperPieces { get; set; }
+    public int SilverPieces { get; set; }
+    public int ElectrumPieces { get; set; }
+    public int GoldPieces { get; set; }
+    public int PlatinumPieces { get; set; }
+
     public ICollection<CharacterClass> Classes { get; set; } = new List<CharacterClass>();
     public ICollection<CharacterSkillProficiency> Skills { get; set; } = new List<CharacterSkillProficiency>();
     public ICollection<CharacterSavingThrowProficiency> SavingThrows { get; set; } = new List<CharacterSavingThrowProficiency>();
+    public ICollection<InventoryItem> Inventory { get; set; } = new List<InventoryItem>();
 
     public int TotalLevel => Classes.Sum(c => c.Level);
 }
