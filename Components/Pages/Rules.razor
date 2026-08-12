@@ -1,0 +1,144 @@
+@page "/rules"
+@rendermode InteractiveServer
+@using LoreWeaver.Features.Rules
+@inject RulesQueryService RulesQuery
+@inject IJSRuntime JS
+
+<PageTitle>Busca de Regras</PageTitle>
+
+<h1>Busca de Regras @if (_selected is not null) { <span class="badge-canon">SRD</span> }</h1>
+
+<EditForm Model="@_termForm" OnValidSubmit="SearchByTerm">
+    <div class="form-row">
+        <div>
+            <label for="term-search">Buscar por termo</label>
+            <InputText id="term-search" @bind-Value="_termForm.Term" placeholder="Ex.: initiative" />
+        </div>
+        <div class="form-row-action">
+            <button type="submit">Buscar termo</button>
+        </div>
+    </div>
+</EditForm>
+
+<EditForm Model="@_slugForm" OnValidSubmit="SearchBySlug">
+    <div class="form-row">
+        <div>
+            <label for="slug-search">Buscar por slug (index SRD)</label>
+            <InputText id="slug-search" @bind-Value="_slugForm.Slug" placeholder="Ex.: initiative" />
+        </div>
+        <div class="form-row-action">
+            <button type="submit">Buscar slug</button>
+        </div>
+    </div>
+</EditForm>
+
+<div class="notice" role="status">
+    @switch (_status)
+    {
+        case "idle": <text>Pesquise por termo ou slug da SRD.</text> break;
+        case "loading": <text>Carregando resultados...</text> break;
+        case "not-found": <text>Nenhuma entrada canônica encontrada.</text> break;
+        case "error": @_errorMessage break;
+        case "ambiguous": <text>Múltiplas entradas possíveis. Selecione uma para ver o detalhe.</text> break;
+    }
+</div>
+
+@if (_status == "ambiguous")
+{
+    <div class="result-card">
+        @foreach (var item in _candidates)
+        {
+            <article>
+                <header>
+                    <strong>@item.Name</strong>
+                    <button type="button" @onclick="() => OpenCandidate(item)">Abrir</button>
+                </header>
+                <p class="notice">@(item.Domain == "rules" ? "Regra SRD" : "Seção SRD")</p>
+            </article>
+        }
+    </div>
+}
+
+@if (_selected is not null)
+{
+    <article class="result-card">
+        <header>
+            <h3>@_selected.Name</h3>
+            <a href="@_selected.CanonicalLink" target="_blank" rel="noreferrer">Abrir na SRD</a>
+        </header>
+        @foreach (var paragraph in _selected.Desc.Take(3))
+        {
+            <p>@paragraph</p>
+        }
+        <div class="actions">
+            <button type="button" @onclick="Copy">Copiar</button>
+        </div>
+    </article>
+}
+
+@code {
+    private readonly TermFormModel _termForm = new();
+    private readonly SlugFormModel _slugForm = new();
+    private string _status = "idle";
+    private string? _errorMessage;
+    private IReadOnlyList<SrdRuleSummary> _candidates = [];
+    private SrdRuleDetail? _selected;
+
+    private async Task SearchByTerm()
+    {
+        _status = "loading";
+        StateHasChanged();
+
+        var result = await RulesQuery.SearchByTermAsync(_termForm.Term);
+        Apply(result);
+    }
+
+    private async Task SearchBySlug()
+    {
+        _status = "loading";
+        StateHasChanged();
+
+        var result = await RulesQuery.SearchBySlugAsync(_slugForm.Slug);
+        Apply(result);
+    }
+
+    private async Task OpenCandidate(SrdRuleSummary item)
+    {
+        _status = "loading";
+        StateHasChanged();
+        var result = await RulesQuery.SearchBySlugAsync(item.Index);
+        Apply(result);
+    }
+
+    private void Apply(RulesQueryResult result)
+    {
+        _selected = result.Selected;
+        _candidates = result.Candidates;
+        _errorMessage = result.ErrorMessage;
+        _status = result.Status switch
+        {
+            RulesQueryStatus.Ok => "success",
+            RulesQueryStatus.Ambiguous => "ambiguous",
+            RulesQueryStatus.Error => "error",
+            _ => "not-found"
+        };
+    }
+
+    private async Task Copy()
+    {
+        if (_selected is null) return;
+        var lines = new List<string> { $"{_selected.Name} ({(_selected.Domain == "rules" ? "SRD Rule" : "SRD Rule Section")})", "" };
+        lines.AddRange(_selected.Desc);
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", string.Join('\n', lines));
+    }
+
+    private class TermFormModel
+    {
+        public string Term { get; set; } = "";
+    }
+
+    private class SlugFormModel
+    {
+        public string Slug { get; set; } = "";
+    }
+}

@@ -1,0 +1,106 @@
+@page "/npcs"
+@rendermode InteractiveServer
+@using LoreWeaver.Features.Npcs
+@inject IJSRuntime JS
+
+<PageTitle>Gerador de NPCs</PageTitle>
+
+<h1>Gerador de NPCs <span class="badge-homebrew">Homebrew</span></h1>
+
+<EditForm Model="@_form" OnValidSubmit="Generate">
+    <div class="form-row">
+        <div>
+            <label for="npc-quantidade">Quantidade (1–10)</label>
+            <InputNumber id="npc-quantidade" @bind-Value="_form.Quantity" min="1" max="10" />
+        </div>
+        <div>
+            <label for="npc-tom">Tom</label>
+            <InputSelect id="npc-tom" @bind-Value="_form.Tone">
+                <option value="neutro">Neutro</option>
+                <option value="sombrio">Sombrio</option>
+                <option value="esperanca">Esperança</option>
+                <option value="tenso">Tenso</option>
+            </InputSelect>
+        </div>
+        <div>
+            <label for="npc-local">Local</label>
+            <InputText id="npc-local" @bind-Value="_form.Location" placeholder="Ex.: Porto brumoso" />
+        </div>
+        <div>
+            <label for="npc-vies">Viés de papel</label>
+            <InputSelect id="npc-vies" @bind-Value="_form.RoleBias">
+                <option value="">Sem viés</option>
+                <option value="urbano">Urbano</option>
+                <option value="selvagem">Selvagem</option>
+                <option value="militar">Militar</option>
+                <option value="comunidade">Comunidade</option>
+                <option value="sagrado">Sagrado</option>
+                <option value="campo">Campo</option>
+                <option value="costa">Costa</option>
+            </InputSelect>
+        </div>
+        <div class="form-row-action">
+            <button type="submit">Gerar</button>
+        </div>
+    </div>
+</EditForm>
+
+<p class="notice">Geração determinística local. Use "Re-rolar" para nova seed.</p>
+
+@if (_npcs is not null)
+{
+    @for (var i = 0; i < _npcs.Count; i++)
+    {
+        var npc = _npcs[i];
+        <article class="result-card">
+            <header>
+                <strong>@(i + 1). @npc.Name</strong>
+                <span>@npc.Role</span>
+            </header>
+            <p class="notice">Contexto: @npc.Context</p>
+            <p>Traço: @npc.Trait.</p>
+            <p>Motivação: @npc.Motivation.</p>
+            <p>Gancho: @npc.Hook.</p>
+        </article>
+    }
+
+    <div class="actions">
+        <button type="button" @onclick="Copy">Copiar</button>
+        <button type="button" @onclick="Reroll">Re-rolar</button>
+    </div>
+}
+
+@code {
+    private readonly NpcFormModel _form = new();
+    private IReadOnlyList<Npc>? _npcs;
+    private int _seedBump;
+
+    protected override void OnInitialized() => Generate();
+
+    private void Generate()
+    {
+        var request = new NpcRequest(_form.Quantity, _form.Tone, _form.Location, _form.RoleBias, _seedBump);
+        _npcs = NpcGenerator.Generate(request);
+    }
+
+    private void Reroll()
+    {
+        _seedBump++;
+        Generate();
+    }
+
+    private async Task Copy()
+    {
+        if (_npcs is null || _npcs.Count == 0) return;
+        var text = string.Join('\n', _npcs.Select((npc, index) => npc.ToText(index + 1)));
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", text);
+    }
+
+    private class NpcFormModel
+    {
+        public int Quantity { get; set; } = 1;
+        public string Tone { get; set; } = "neutro";
+        public string? Location { get; set; }
+        public string? RoleBias { get; set; } = "";
+    }
+}

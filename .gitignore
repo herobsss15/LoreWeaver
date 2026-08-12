@@ -1,0 +1,73 @@
+# Claude Code
+.claude/
+
+## .NET build results
+bin/
+obj/
+out/
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Ll]og/
+[Ll]ogs/
+
+## Visual Studio / Rider / VS Code
+.vs/
+.vscode/
+.idea/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.userprefs
+*.rsuser
+*.dbmdl
+*.jfm
+
+## MSBuild / NuGet
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+
+## Blazor / ASP.NET Core
+**/wwwroot/lib/
+compiler/resources/*.js
+*.pubxml
+*.publishproj
+PublishProfiles/
+**/appsettings.*.local.json
+
+## EF Core
+*.db
+*.db-shm
+*.db-wal
+Migrations/*.sql
+
+## Testing / coverage
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+
+## Rider / ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+## OS
+.DS_Store
+Thumbs.db
+desktop.ini

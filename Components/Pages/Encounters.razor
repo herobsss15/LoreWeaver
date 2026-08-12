@@ -1,0 +1,100 @@
+@page "/encounters"
+@rendermode InteractiveServer
+@using LoreWeaver.Features.Encounters
+@inject IJSRuntime JS
+
+<PageTitle>Compositor de Encontros</PageTitle>
+
+<h1>Compositor de Encontros <span class="badge-canon">SRD</span></h1>
+
+<EditForm Model="@_form" OnValidSubmit="Compose">
+    <div class="form-row">
+        <div>
+            <label for="levels-input">Níveis do grupo</label>
+            <InputText id="levels-input" @bind-Value="_form.LevelsInput" placeholder="Ex.: 5,5,5,5" />
+        </div>
+        <div>
+            <label for="difficulty-select">Dificuldade</label>
+            <InputSelect id="difficulty-select" @bind-Value="_form.Difficulty">
+                <option value="facil">Fácil</option>
+                <option value="media">Média</option>
+                <option value="dificil">Difícil</option>
+            </InputSelect>
+        </div>
+        <div>
+            <label for="biome-select">Bioma</label>
+            <InputSelect id="biome-select" @bind-Value="_form.Biome">
+                @foreach (var biome in MonsterData.BiomeMap.Keys)
+                {
+                    <option value="@biome">@biome</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="form-row-action">
+            <button type="submit">Compor</button>
+        </div>
+    </div>
+</EditForm>
+
+<p class="notice">Os limites de XP seguem a tabela SRD para encontros por dificuldade. Resultados são aproximações.</p>
+
+@if (_result is not null)
+{
+    <article class="result-card">
+        <p><strong>Orçamento de XP:</strong> @(_result.Budget > 0 ? _result.Budget : 0) XP</p>
+        @if (_result.Monsters.Count > 0)
+        {
+            <ul>
+                @foreach (var pick in _result.Monsters)
+                {
+                    <li>
+                        <a href="@pick.Monster.CanonicalLink" target="_blank" rel="noreferrer">@pick.Monster.Name</a>
+                        — CR @pick.Monster.Cr · @pick.Monster.Xp XP · @pick.Count unidade(s)
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p>Sem criaturas sugeridas para este cenário.</p>
+        }
+        @if (_result.Note is not null)
+        {
+            <p class="notice">@_result.Note</p>
+        }
+        <div class="actions">
+            <button type="button" @onclick="Copy">Copiar</button>
+        </div>
+    </article>
+}
+
+@code {
+    private readonly EncounterFormModel _form = new();
+    private EncounterResult? _result;
+
+    protected override void OnInitialized() => Compose();
+
+    private void Compose()
+    {
+        var levels = XpTables.ParseLevels(_form.LevelsInput);
+        _result = levels.Count == 0
+            ? new EncounterResult(0, [], "Insira níveis válidos separados por vírgula (ex.: 5,5,5,5).")
+            : EncounterComposer.Compose(levels, _form.Difficulty, _form.Biome);
+    }
+
+    private async Task Copy()
+    {
+        if (_result is null) return;
+        var lines = new List<string> { $"Orçamento estimado: {_result.Budget} XP ({_form.Difficulty})" };
+        lines.AddRange(_result.Monsters.Select(p => $"{p.Count}× {p.Monster.Name} (CR {p.Monster.Cr}, {p.Monster.Xp} XP)"));
+        if (_result.Note is not null) lines.Add($"Nota: {_result.Note}");
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", string.Join('\n', lines));
+    }
+
+    private class EncounterFormModel
+    {
+        public string LevelsInput { get; set; } = "5,5,5,5";
+        public string Difficulty { get; set; } = "media";
+        public string Biome { get; set; } = "Floresta";
+    }
+}
