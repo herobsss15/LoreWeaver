@@ -10,6 +10,7 @@ public class LoreWeaverDbContext(DbContextOptions<LoreWeaverDbContext> options) 
     public DbSet<CharacterClass> CharacterClasses => Set<CharacterClass>();
     public DbSet<CharacterSkillProficiency> CharacterSkillProficiencies => Set<CharacterSkillProficiency>();
     public DbSet<CharacterSavingThrowProficiency> CharacterSavingThrowProficiencies => Set<CharacterSavingThrowProficiency>();
+    public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -42,6 +43,11 @@ public class LoreWeaverDbContext(DbContextOptions<LoreWeaverDbContext> options) 
                 .WithOne(s => s.Character)
                 .HasForeignKey(s => s.CharacterId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            character.HasMany(c => c.Inventory)
+                .WithOne(i => i.Character)
+                .HasForeignKey(i => i.CharacterId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Partial unique index: only one CharacterClass per Character may have IsStartingClass = true.
@@ -58,5 +64,21 @@ public class LoreWeaverDbContext(DbContextOptions<LoreWeaverDbContext> options) 
         modelBuilder.Entity<CharacterSavingThrowProficiency>()
             .HasIndex(s => new { s.CharacterId, s.Ability })
             .IsUnique();
+
+        // Only BodyArmor and Shield feed the ArmorClass formula, so only
+        // those two slots get a database-level exclusivity guarantee - hand
+        // slots (weapons) are informational only for now.
+        // Note: the index name must be passed into HasIndex() itself - two
+        // HasIndex() calls over the same property with only .HasDatabaseName()
+        // to distinguish them silently collapse into a single index.
+        modelBuilder.Entity<InventoryItem>()
+            .HasIndex(i => i.CharacterId, "IX_InventoryItem_OneEquippedBodyArmorPerCharacter")
+            .IsUnique()
+            .HasFilter($"\"IsEquipped\" = true AND \"Slot\" = {(int)EquipmentSlot.BodyArmor}");
+
+        modelBuilder.Entity<InventoryItem>()
+            .HasIndex(i => i.CharacterId, "IX_InventoryItem_OneEquippedShieldPerCharacter")
+            .IsUnique()
+            .HasFilter($"\"IsEquipped\" = true AND \"Slot\" = {(int)EquipmentSlot.Shield}");
     }
 }

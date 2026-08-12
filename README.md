@@ -25,7 +25,7 @@ dotnet run
 
 - `Components/Pages/` — páginas Razor (Mundos, Personagens, Regras, NPCs, Encontros)
 - `Features/` — lógica de domínio por área (`Characters`, `Npcs`, `Encounters`, `Rules`, `Common`)
-- `Features/Characters/Catalog/` — dados de classes/raças/perícias da SRD 2014, embutidos (ported de `5e-bits/5e-database`, sem dependência de rede)
+- `Features/Characters/Catalog/` — dados de classes/raças/perícias/equipamento da SRD 2014, embutidos (ported de `5e-bits/5e-database`, sem dependência de rede — classes/raças/perícias como arrays C#, equipamento como JSON embutido dado o volume: 237 itens)
 - `Data/` — `DbContext`, entidades e migrations do EF Core
 
 ## Funcionalidades
@@ -33,11 +33,12 @@ dotnet run
 - **Busca de Regras:** proxy/cache server-side para a SRD (termo ou slug), com TTL de 6h e stale-while-revalidate de 5min.
 - **Gerador de NPCs:** geração determinística local com seed e re-roll, rotulado como Homebrew.
 - **Compositor de Encontros:** orçamento de XP aproximado (tabelas do DMG) e criaturas sugeridas com links canônicos da SRD.
-- **Mundos e Personagens:** CRUD básico de mundos e ficha mecânica de personagem — atributos, multiclasse, PV/CA/bônus de proficiência com override manual, perícias e salvaguardas. Classe/raça aceitam SRD ou texto livre (homebrew). Inventário e magias ainda não implementados.
+- **Mundos e Personagens:** CRUD básico de mundos e ficha mecânica de personagem — atributos, multiclasse, PV/bônus de proficiência com override manual, perícias e salvaguardas. Classe/raça aceitam SRD ou texto livre (homebrew).
+- **Inventário e CA:** itens de equipamento (SRD ou homebrew), slots (armadura/escudo/mãos), moeda nas 5 denominações. CA real calculada a partir da armadura/escudo equipados (leve/média/pesada, cap de DEX conforme categoria), com override manual sempre prevalecendo. Peso/carga não é rastreado (decisão explícita).
 
 ## Roadmap
 
-- Inventário / equipamento e magias (spellbook, incl. multiclass spellcasting)
+- Magias / spellbook (incl. multiclass spellcasting)
 - Autenticação simplificada para o grupo (convite/senha + Cloudflare Access)
 - Videoconferência em grupo via LiveKit self-hosted (SFU) + coturn para TURN/STUN
 - Streaming de música de ambientação mixado no mesmo room do LiveKit
