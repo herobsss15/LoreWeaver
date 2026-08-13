@@ -71,3 +71,6 @@ _ReSharper*/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+## Deploy secrets
+deploy/**/.env

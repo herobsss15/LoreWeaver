@@ -1,0 +1,37 @@
+.video-call {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.video-call-controls {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.video-call-controls .leave {
+    margin-left: auto;
+}
+
+.video-call-devices {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.video-call-devices label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.85rem;
+}
+
+.video-call-local {
+    max-width: 220px;
+}
+
+/* .video-call-remote's own layout (grid/flex, pin/filmstrip mode) lives in
+   app.css, not here - video-call.js attaches tiles into it via plain DOM
+   calls, bypassing Blazor's renderer, and scoped CSS only reaches elements
+   Blazor itself rendered. */

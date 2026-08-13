@@ -11,6 +11,7 @@ public class LoreWeaverDbContext(DbContextOptions<LoreWeaverDbContext> options) 
     public DbSet<CharacterSkillProficiency> CharacterSkillProficiencies => Set<CharacterSkillProficiency>();
     public DbSet<CharacterSavingThrowProficiency> CharacterSavingThrowProficiencies => Set<CharacterSavingThrowProficiency>();
     public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
+    public DbSet<GameSession> GameSessions => Set<GameSession>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

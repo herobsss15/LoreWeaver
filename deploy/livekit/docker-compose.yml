@@ -1,0 +1,66 @@
+# LiveKit (SFU) + coturn (TURN/STUN) for LoreWeaver's session comms (video/voice/screen share).
+#
+# Target: Linux Docker Engine on the home server. `network_mode: host` is used for
+# livekit and coturn because both need to publish UDP port ranges for WebRTC
+# media/relay; routing that through Docker's bridge NAT is unreliable and painful to
+# configure port-by-port. This does NOT behave the same way on Docker Desktop
+# (Windows/Mac) — deploy this on the actual Linux home server, not a dev machine.
+#
+# Router/firewall ports to forward to the home server's LAN IP:
+#   TCP 7880        LiveKit signaling (WebSocket/HTTP)
+#   TCP 7881        LiveKit ICE/TCP fallback
+#   UDP 50000-50100 LiveKit WebRTC media (~1 port per connected participant, not per track)
+#   UDP/TCP 3478    coturn STUN/TURN
+#   UDP 49160-49200 coturn relay range
+#
+# If the home server's WAN IP (as seen by the router) doesn't match its actual
+# internet-facing IP, the connection is behind CGNAT and none of the above forwarding
+# will work — check this before debugging anything else in this stack.
+#
+# Secrets (API keys, TURN credentials) live in `.env` (gitignored). Copy `.env.example`
+# to `.env` on the server and fill in real values. Never commit `.env`.
+
+services:
+  # livekit-server and coturn can't read ${VAR} placeholders from their own config
+  # files — only docker-compose interpolates those, and only within this file. This
+  # step renders the two templates into real config with secrets substituted in,
+  # onto a shared volume the other two services mount read-only.
+  config-render:
+    image: alpine:3.20
+    env_file: .env
+    volumes:
+      - ./livekit.yaml.template:/template/livekit.yaml.template:ro
+      - ./turnserver.conf.template:/template/turnserver.conf.template:ro
+      - ./render-config.sh:/render-config.sh:ro
+      - rendered-config:/rendered
+    entrypoint: ["/bin/sh", "/render-config.sh"]
+    restart: "no"
+
+  livekit:
+    image: livekit/livekit-server:latest
+    network_mode: host
+    depends_on:
+      config-render:
+        condition: service_completed_successfully
+    volumes:
+      - rendered-config:/etc/livekit:ro
+    environment:
+      # JWT signing key/secret for room-access tokens. Read by the app's server-side
+      # token-minting service (task 2) — never sent to browsers.
+      LIVEKIT_KEYS: "${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}"
+    command: ["--config", "/etc/livekit/livekit.yaml"]
+    restart: unless-stopped
+
+  coturn:
+    image: coturn/coturn:latest
+    network_mode: host
+    depends_on:
+      config-render:
+        condition: service_completed_successfully
+    volumes:
+      - rendered-config:/etc/coturn:ro
+    command: ["-c", "/etc/coturn/turnserver.conf"]
+    restart: unless-stopped
+
+volumes:
+  rendered-config:

@@ -181,3 +181,53 @@ main {
     align-items: center;
     gap: 1rem;
 }
+
+/* video-call.js attaches <video>/<audio> elements straight into these containers
+   via plain DOM calls, bypassing Blazor's renderer - so this can't live in
+   VideoCall.razor.css: scoped CSS only reaches elements Blazor itself rendered. */
+.video-call-local video,
+.video-call-remote video {
+    width: 100%;
+    border-radius: 8px;
+    background: #111;
+    display: block;
+}
+
+/* Default: tiles wrap and share space evenly, so the grid adapts on its own
+   as participants join/leave - no fixed row/column count to update. */
+.video-call-remote {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-start;
+}
+
+.video-call-remote .lk-tile {
+    flex: 1 1 220px;
+    max-width: 320px;
+    cursor: pointer;
+    outline: 2px solid transparent;
+    transition: outline-color 0.15s ease;
+}
+
+.video-call-remote .lk-tile:hover {
+    outline-color: #58a6ff;
+}
+
+/* Click a tile to focus it: it becomes a full-width spotlight (flex-basis:
+   100% forces every following flex item onto a new line) and the rest
+   shrink into a filmstrip row underneath. Click it again to go back to the
+   even grid above. */
+.video-call-remote.has-pinned .lk-tile {
+    flex: 0 0 140px;
+    max-width: 140px;
+    order: 2;
+}
+
+.video-call-remote.has-pinned .lk-tile.pinned {
+    flex: 1 1 100%;
+    max-width: 100%;
+    max-height: 65vh;
+    order: 1;
+    cursor: zoom-out;
+}
