@@ -1,0 +1,44 @@
+# Production stack: the app + its own Postgres. LiveKit/coturn are a separate stack
+# (deploy/livekit/), deployed independently since they use network_mode: host.
+#
+# Secrets live in `.env` (gitignored, same directory as this file so compose reads it
+# automatically). Copy `.env.example` to `.env` and fill in real values first.
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_URLS: http://+:${APP_PORT:-8080}
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: >-
+        Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      LiveKit__WebSocketUrl: ${LIVEKIT_WEBSOCKET_URL:-}
+      LiveKit__ApiUrl: ${LIVEKIT_API_URL:-}
+      LiveKit__ApiKey: ${LIVEKIT_API_KEY:-}
+      LiveKit__ApiSecret: ${LIVEKIT_API_SECRET:-}
+    ports:
+      - "${APP_PORT:-8080}:${APP_PORT:-8080}"
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres-data:

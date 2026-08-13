@@ -1,0 +1,12 @@
+**/bin/
+**/obj/
+.git/
+.gitignore
+.gitattributes
+.claude/
+.vs/
+.vscode/
+.idea/
+*.user
+deploy/
+README.md

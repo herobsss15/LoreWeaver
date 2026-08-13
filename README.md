@@ -36,6 +36,19 @@ dotnet user-secrets set "LiveKit:WebSocketUrl" "ws://localhost:7880"
 
 `ApiSecret` precisa ter pelo menos 256 bits (32 bytes) — o SDK .NET rejeita segredos mais curtos na inicialização.
 
+## Deploy em produção
+
+```bash
+cp .env.example .env   # preencher POSTGRES_* (e LIVEKIT_* se a stack de LiveKit já estiver no ar)
+docker compose up -d --build
+
+# migrations não rodam sozinhas no container (sem dotnet-ef na imagem de runtime) —
+# aplicar manualmente contra o Postgres do compose, ex.:
+dotnet ef database update --connection "Host=localhost;Port=5432;Database=loreweaver;Username=loreweaver;Password=<senha-do-.env>"
+```
+
+`docker-compose.yml` na raiz sobe só a app + Postgres dela. LiveKit/coturn (`deploy/livekit/`) são uma stack separada — usam `network_mode: host` e por isso não entram nesse mesmo compose. A porta é controlada por uma única variável (`APP_PORT` no `.env`), repassada tanto para `ASPNETCORE_URLS` dentro do container quanto para o mapeamento de porta do host.
+
 ## Estrutura
 
 - `Components/Pages/` — páginas Razor (Mundos, Personagens, Regras, NPCs, Encontros, Sessão)
@@ -43,6 +56,7 @@ dotnet user-secrets set "LiveKit:WebSocketUrl" "ws://localhost:7880"
 - `Features/` — lógica de domínio por área (`Characters`, `Npcs`, `Encounters`, `Rules`, `Comms`, `Common`)
 - `Features/Characters/Catalog/` — dados de classes/raças/perícias/equipamento da SRD 2014, embutidos (ported de `5e-bits/5e-database`, sem dependência de rede — classes/raças/perícias como arrays C#, equipamento como JSON embutido dado o volume: 237 itens)
 - `Data/` — `DbContext`, entidades e migrations do EF Core
+- `Dockerfile`, `docker-compose.yml` — build multi-stage da app + serviço Postgres para o deploy em produção (ver seção acima)
 - `deploy/livekit/` — `docker-compose.yml` do LiveKit + coturn para o home server (não usado localmente, só no deploy real)
 - `wwwroot/vendor/livekit-client/` — bundle ESM do `livekit-client` vendorizado no repo (sem CDN, sem bundler no pipeline do Blazor Server)
 
