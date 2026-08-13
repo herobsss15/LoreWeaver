@@ -9,6 +9,17 @@
         <button type="button" class="leave" @onclick="Leave">Sair da chamada</button>
     </div>
 
+    <div class="video-call-devices">
+        <label>
+            Câmera
+            <select id="@_cameraSelectId"></select>
+        </label>
+        <label>
+            Microfone
+            <select id="@_micSelectId"></select>
+        </label>
+    </div>
+
     <div class="video-call-local" id="@_localContainerId"></div>
     <div class="video-call-remote" id="@_remoteContainerId"></div>
 </div>
@@ -20,6 +31,8 @@
 
     private readonly string _localContainerId = $"lk-local-{Guid.NewGuid():N}";
     private readonly string _remoteContainerId = $"lk-remote-{Guid.NewGuid():N}";
+    private readonly string _cameraSelectId = $"lk-camera-{Guid.NewGuid():N}";
+    private readonly string _micSelectId = $"lk-mic-{Guid.NewGuid():N}";
 
     private IJSObjectReference? _module;
     private DotNetObjectReference<VideoCall>? _dotNetRef;
@@ -34,7 +47,8 @@
         _module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "/js/video-call.js");
         _dotNetRef = DotNetObjectReference.Create(this);
 
-        await _module.InvokeVoidAsync("connect", WebSocketUrl, Token, _remoteContainerId, _localContainerId, _dotNetRef);
+        await _module.InvokeVoidAsync(
+            "connect", WebSocketUrl, Token, _remoteContainerId, _localContainerId, _cameraSelectId, _micSelectId, _dotNetRef);
     }
 
     private async Task ToggleCamera()
