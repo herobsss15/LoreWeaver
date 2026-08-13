@@ -1,0 +1,99 @@
+@page "/session"
+@rendermode InteractiveServer
+@using LoreWeaver.Components.Comms
+@using LoreWeaver.Data.Entities
+@using LoreWeaver.Features.Comms
+@inject GameSessionService Sessions
+
+<PageTitle>Sessão</PageTitle>
+
+<h1>Sessão de jogo</h1>
+
+@if (_joined && _token is not null)
+{
+    <VideoCall WebSocketUrl="@Sessions.WebSocketUrl" Token="@_token" OnLeave="HandleLeave" />
+}
+else if (_activeSession is null)
+{
+    <p class="notice">Nenhuma sessão em andamento.</p>
+    <EditForm Model="@_form" OnValidSubmit="StartSession">
+        <div class="form-row">
+            <div>
+                <label for="starter-name">Seu nome</label>
+                <InputText id="starter-name" @bind-Value="_form.DisplayName" placeholder="Ex.: Mestre" />
+            </div>
+            <div class="form-row-action">
+                <button type="submit">Iniciar sessão</button>
+            </div>
+        </div>
+    </EditForm>
+}
+else
+{
+    <p class="notice">Sessão em andamento, iniciada por @_activeSession.StartedByName.</p>
+    <EditForm Model="@_form" OnValidSubmit="JoinSession">
+        <div class="form-row">
+            <div>
+                <label for="join-name">Seu nome</label>
+                <InputText id="join-name" @bind-Value="_form.DisplayName" placeholder="Ex.: Jogador" />
+            </div>
+            <div class="form-row-action">
+                <button type="submit">Entrar na sessão</button>
+            </div>
+        </div>
+    </EditForm>
+    <div class="actions">
+        <button type="button" @onclick="EndSession">Encerrar sessão</button>
+    </div>
+}
+
+@code {
+    private GameSession? _activeSession;
+    private readonly SessionFormModel _form = new();
+    private string? _token;
+    private bool _joined;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _activeSession = await Sessions.GetActiveSessionAsync();
+    }
+
+    private async Task StartSession()
+    {
+        if (string.IsNullOrWhiteSpace(_form.DisplayName)) return;
+
+        var name = _form.DisplayName.Trim();
+        _activeSession = await Sessions.CreateSessionAsync(name);
+        _token = Sessions.CreateParticipantToken(_activeSession.RoomName, name);
+        _joined = true;
+    }
+
+    private Task JoinSession()
+    {
+        if (string.IsNullOrWhiteSpace(_form.DisplayName) || _activeSession is null) return Task.CompletedTask;
+
+        var name = _form.DisplayName.Trim();
+        _token = Sessions.CreateParticipantToken(_activeSession.RoomName, name);
+        _joined = true;
+        return Task.CompletedTask;
+    }
+
+    private async Task EndSession()
+    {
+        if (_activeSession is null) return;
+
+        await Sessions.EndSessionAsync(_activeSession.Id);
+        _activeSession = null;
+    }
+
+    private void HandleLeave()
+    {
+        _joined = false;
+        _token = null;
+    }
+
+    private class SessionFormModel
+    {
+        public string DisplayName { get; set; } = "";
+    }
+}

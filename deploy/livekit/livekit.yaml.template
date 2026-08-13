@@ -1,0 +1,32 @@
+port: 7880
+bind_addresses:
+  - "0.0.0.0"
+
+rtc:
+  tcp_port: 7881
+  port_range_start: 50000
+  port_range_end: 50100
+  use_external_ip: true
+  enable_loopback_candidate: false
+
+# External TURN/STUN (coturn, run as a separate service in this stack) advertised to
+# clients as ICE candidates. LiveKit's embedded TURN server is disabled below —
+# coturn is the TURN/STUN provider per the agreed architecture, not livekit-server.
+ice_servers:
+  - urls:
+      - "stun:__TURN_PUBLIC_HOST__:3478"
+  - urls:
+      - "turn:__TURN_PUBLIC_HOST__:3478?transport=udp"
+    username: "__TURN_USERNAME__"
+    credential: "__TURN_PASSWORD__"
+
+turn:
+  enabled: false
+
+room:
+  auto_create: true
+  # A room is created on demand per game session (see the app-level session flow)
+  # and torn down automatically once empty. Set explicitly rather than relying on
+  # LiveKit's default so the cleanup behavior is documented here, not implicit.
+  empty_timeout: 300      # seconds an empty room is kept alive before auto-deletion
+  departure_timeout: 20   # grace period after a participant disconnects before they're dropped

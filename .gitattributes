@@ -1,0 +1,3 @@
+# Deploy scripts run on Linux (the home server) regardless of which OS checks
+# them out - a CRLF line ending breaks the #!/bin/sh shebang outright.
+*.sh text eol=lf

@@ -181,3 +181,14 @@ main {
     align-items: center;
     gap: 1rem;
 }
+
+/* video-call.js attaches <video>/<audio> elements straight into these containers
+   via plain DOM calls, bypassing Blazor's renderer - so this can't live in
+   VideoCall.razor.css: scoped CSS only reaches elements Blazor itself rendered. */
+.video-call-local video,
+.video-call-remote video {
+    width: 100%;
+    border-radius: 8px;
+    background: #111;
+    display: block;
+}

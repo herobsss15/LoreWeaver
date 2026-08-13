@@ -1,0 +1,93 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JSRuntime
+
+<div class="video-call">
+    <div class="video-call-controls">
+        <button type="button" @onclick="ToggleCamera">@(_cameraOn ? "Desligar câmera" : "Ligar câmera")</button>
+        <button type="button" @onclick="ToggleMicrophone">@(_micOn ? "Mutar" : "Desmutar")</button>
+        <button type="button" @onclick="ToggleScreenShare">@(_screenShareOn ? "Parar compartilhamento" : "Compartilhar tela")</button>
+        <button type="button" class="leave" @onclick="Leave">Sair da chamada</button>
+    </div>
+
+    <div class="video-call-local" id="@_localContainerId"></div>
+    <div class="video-call-remote" id="@_remoteContainerId"></div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required string WebSocketUrl { get; set; }
+    [Parameter, EditorRequired] public required string Token { get; set; }
+    [Parameter] public EventCallback OnLeave { get; set; }
+
+    private readonly string _localContainerId = $"lk-local-{Guid.NewGuid():N}";
+    private readonly string _remoteContainerId = $"lk-remote-{Guid.NewGuid():N}";
+
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<VideoCall>? _dotNetRef;
+    private bool _cameraOn = true;
+    private bool _micOn = true;
+    private bool _screenShareOn;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        _module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "/js/video-call.js");
+        _dotNetRef = DotNetObjectReference.Create(this);
+
+        await _module.InvokeVoidAsync("connect", WebSocketUrl, Token, _remoteContainerId, _localContainerId, _dotNetRef);
+    }
+
+    private async Task ToggleCamera()
+    {
+        if (_module is null) return;
+        _cameraOn = !_cameraOn;
+        await _module.InvokeVoidAsync("setCameraEnabled", _cameraOn);
+    }
+
+    private async Task ToggleMicrophone()
+    {
+        if (_module is null) return;
+        _micOn = !_micOn;
+        await _module.InvokeVoidAsync("setMicrophoneEnabled", _micOn);
+    }
+
+    private async Task ToggleScreenShare()
+    {
+        if (_module is null) return;
+        _screenShareOn = !_screenShareOn;
+        await _module.InvokeVoidAsync("setScreenShareEnabled", _screenShareOn);
+    }
+
+    // Just tells the JS side to disconnect - the resulting RoomEvent.Disconnected
+    // fires OnDisconnected below, which is the single place OnLeave is raised, so
+    // programmatic and network-triggered disconnects are handled identically.
+    private async Task Leave()
+    {
+        if (_module is null) return;
+        await _module.InvokeVoidAsync("disconnect");
+    }
+
+    [JSInvokable]
+    public async Task OnDisconnected()
+    {
+        await OnLeave.InvokeAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is not null)
+        {
+            try
+            {
+                await _module.InvokeVoidAsync("disconnect");
+            }
+            catch (JSDisconnectedException)
+            {
+                // circuit already gone - nothing left to clean up client-side
+            }
+            await _module.DisposeAsync();
+        }
+
+        _dotNetRef?.Dispose();
+    }
+}

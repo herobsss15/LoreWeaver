@@ -1,0 +1,33 @@
+# coturn TURN/STUN server for LoreWeaver session comms.
+# Rendered from this template by the config-render service (see docker-compose.yml);
+# secrets come from .env — never hardcode them here.
+
+listening-port=3478
+tls-listening-port=5349
+listening-ip=0.0.0.0
+relay-ip=0.0.0.0
+
+# Maps the server's private/LAN IP to its public-facing IP so relay candidates
+# advertised to clients are reachable from the internet, not just the LAN.
+# Format: <public-ip>/<private-ip> — both must be literal IPs, coturn does not
+# resolve hostnames here. Required on a residential connection behind NAT; if the
+# public IP isn't static, this needs updating (and coturn restarting) when it changes.
+external-ip=__TURN_PUBLIC_IP_MAPPING__
+
+# Relay port range forwarded on the router — kept narrow. A 5-person table needs
+# only a handful of concurrent relayed sessions, not coturn's huge 49152-65535 default.
+min-port=49160
+max-port=49200
+
+# Long-term credential shared by the small, known group of participants. No need for
+# the more complex time-limited REST-API credential scheme (use-auth-secret) at this
+# scale; revisit if the group or access model grows.
+lt-cred-mech
+user=__TURN_USERNAME__:__TURN_PASSWORD__
+realm=loreweaver.internal
+
+no-multicast-peers
+no-cli
+no-tlsv1
+no-tlsv1_1
+fingerprint
